@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useEffect } from 'react';
 import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression } from '../types';
-import { generateProgressions, regenerateProgression } from '../utils/chordGenerator';
+import { generateProgressions, regenerateProgression, generatePassingChord } from '../utils/chordGenerator';
 
 const initialState: AppState = {
   settings: {
@@ -133,6 +133,48 @@ function reducer(state: AppState, action: AppAction): AppState {
         bridgeProgressions: newBridges,
       };
     }
+    case 'INSERT_CHORD': {
+      const { progressionId, insertIndex, newChord } = action.payload;
+
+      // Find progression
+      const findProgression = (id: string): ChordProgression | null => {
+        if (state.mainProgression.id === id) return state.mainProgression;
+        return state.bridgeProgressions.find(p => p.id === id) || null;
+      };
+
+      const prog = findProgression(progressionId);
+      if (!prog || insertIndex <= 0 || insertIndex > prog.chords.length) return state;
+
+      // Clone chords
+      const newChords = [...prog.chords];
+
+      // Halve the duration of the preceding chord
+      if (insertIndex > 0) {
+        newChords[insertIndex - 1] = {
+          ...newChords[insertIndex - 1],
+          durationBeats: Math.max(1, newChords[insertIndex - 1].durationBeats / 2),
+        };
+      }
+
+      // Insert new chord
+      newChords.splice(insertIndex, 0, newChord);
+
+      // Update state
+      if (state.mainProgression.id === progressionId) {
+        return {
+          ...state,
+          mainProgression: { ...state.mainProgression, chords: newChords },
+        };
+      } else {
+        const newBridges = state.bridgeProgressions.map(p =>
+          p.id === progressionId ? { ...p, chords: newChords } : p
+        );
+        return {
+          ...state,
+          bridgeProgressions: newBridges,
+        };
+      }
+    }
     default:
       return state;
   }
@@ -182,6 +224,29 @@ export function useChordProgression() {
     });
   }, []);
 
+  // Insert a passing chord between two existing chords
+  const insertChord = useCallback((progressionId: string, insertIndex: number) => {
+    const { key, genre } = state.settings;
+
+    // Find the progression
+    const prog = state.mainProgression.id === progressionId
+      ? state.mainProgression
+      : state.bridgeProgressions.find(p => p.id === progressionId);
+
+    if (!prog || insertIndex <= 0 || insertIndex >= prog.chords.length) return;
+
+    const prevChord = prog.chords[insertIndex - 1];
+    const nextChord = prog.chords[insertIndex];
+
+    // Generate passing chord
+    const passingChord = generatePassingChord(prevChord, nextChord, key, genre);
+
+    dispatch({
+      type: 'INSERT_CHORD',
+      payload: { progressionId, insertIndex, newChord: passingChord },
+    });
+  }, [state.settings, state.mainProgression, state.bridgeProgressions]);
+
   // Generate initial progressions on mount
   useEffect(() => {
     generate();
@@ -198,5 +263,6 @@ export function useChordProgression() {
     regenerateMain,
     regenerateBridge,
     swapChord,
+    insertChord,
   };
 }

@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { ChordProgression, Key, SoundType } from '../types';
 import { ChordBlock } from './ChordBlock';
+import { InsertButton } from './InsertButton';
 import { exportProgressionToMidi, getProgressionFilename, downloadMidi, isElectron, createMidiFileForDrag } from '../utils/midiExport';
 import { playProgression } from '../utils/audioEngine';
 
@@ -14,6 +15,7 @@ interface ProgressionRowProps {
   onDragStart: (progId: string, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (progId: string, index: number) => void;
+  onInsertChord: (progId: string, insertIndex: number) => void;
 }
 
 export function ProgressionRow({
@@ -26,6 +28,7 @@ export function ProgressionRow({
   onDragStart,
   onDragOver,
   onDrop,
+  onInsertChord,
 }: ProgressionRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
@@ -106,11 +109,10 @@ export function ProgressionRow({
           {/* Play All Button */}
           <button
             onClick={handlePlayAll}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-sm transition-colors ${
-              isPlaying
-                ? 'bg-red-600 hover:bg-red-500 text-white'
-                : 'bg-green-600 hover:bg-green-500 text-white'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-sm transition-colors ${isPlaying
+              ? 'bg-red-600 hover:bg-red-500 text-white'
+              : 'bg-green-600 hover:bg-green-500 text-white'
+              }`}
           >
             {isPlaying ? (
               <>
@@ -138,7 +140,7 @@ export function ProgressionRow({
               title="Drag to DAW"
             >
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
               </svg>
               Drag MIDI
             </div>
@@ -168,22 +170,31 @@ export function ProgressionRow({
         </div>
       </div>
 
-      {/* Chord Blocks */}
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      {/* Chord Blocks with Insert Buttons */}
+      <div className="flex gap-1 items-center overflow-x-auto pb-2">
         {progression.chords.map((chord, index) => (
-          <ChordBlock
-            key={chord.id}
-            chord={chord}
-            keyValue={keyValue}
-            tempo={tempo}
-            soundType={soundType}
-            index={index}
-            progressionId={progression.id}
-            isPlaying={playingIndex === index}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-          />
+          <div key={chord.id} className="flex items-center gap-1">
+            {/* Insert Button (between chords, not before first) */}
+            {index > 0 && (
+              <InsertButton
+                progressionId={progression.id}
+                insertIndex={index}
+                onInsertChord={onInsertChord}
+              />
+            )}
+            <ChordBlock
+              chord={chord}
+              keyValue={keyValue}
+              tempo={tempo}
+              soundType={soundType}
+              index={index}
+              progressionId={progression.id}
+              isPlaying={playingIndex === index}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+            />
+          </div>
         ))}
       </div>
     </div>

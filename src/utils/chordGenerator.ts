@@ -1,5 +1,5 @@
-import type { Key, Genre, Mood, Chord, ChordProgression, ChordQuality } from '../types';
-import { getChordDisplayName, getScaleDegreeNote, getVoicedChordNotes } from './musicTheory';
+import type { Key, Genre, Mood, Chord, ChordProgression, ChordQuality, NoteName } from '../types';
+import { getChordDisplayName, getScaleDegreeNote, getVoicedChordNotes, NOTE_TO_MIDI, NOTE_NAMES, getScaleNotes } from './musicTheory';
 
 // Generate unique ID
 function generateId(): string {
@@ -355,4 +355,65 @@ export function regenerateProgression(
   const templates = getTemplates(genre, mood);
   const template = pickRandom(templates);
   return generateProgressionFromTemplate(key, template, label, genre);
+}
+
+// Generate a passing chord between two chords
+// パッシングコード（経過和音）を生成: 前後のコードを滑らかに繋ぐ
+export function generatePassingChord(
+  prevChord: Chord,
+  nextChord: Chord,
+  key: Key,
+  genre: Genre
+): Chord {
+  const prevRootMidi = NOTE_TO_MIDI[prevChord.root];
+  const nextRootMidi = NOTE_TO_MIDI[nextChord.root];
+
+  // スケール内のノートを取得
+  const scaleNotes = getScaleNotes(key);
+
+  // 前後のルート間の中間音を探す
+  const midpoint = Math.round((prevRootMidi + nextRootMidi) / 2);
+  const midpointNote = NOTE_NAMES[midpoint % 12];
+
+  // 中間音がスケール内にあるかチェック、なければ最も近いスケール音を使用
+  let passingRoot: NoteName = midpointNote;
+  if (!scaleNotes.includes(midpointNote)) {
+    // 最も近いスケール音を探す
+    const distances = scaleNotes.map((note: NoteName) => ({
+      note,
+      dist: Math.abs(NOTE_TO_MIDI[note] - midpoint)
+    }));
+    distances.sort((a: { dist: number }, b: { dist: number }) => a.dist - b.dist);
+    passingRoot = distances[0].note as NoteName;
+  }
+
+  // コードクオリティを決定（前後のコードを参考に）
+  // 簡易的なルール: ドミナント系なら7、マイナー系ならmin7、それ以外はmaj7
+  let passingQuality: ChordQuality = 'maj7';
+
+  if (prevChord.quality.includes('min') || nextChord.quality.includes('min')) {
+    passingQuality = 'min7';
+  }
+  if (prevChord.quality === '7' || nextChord.quality === '7') {
+    passingQuality = '7';
+  }
+
+  // Enrichmentを適用
+  passingQuality = enrichChord(passingQuality, genre);
+
+  // オープンボイシング判定
+  const openVoicingGenres: Genre[] = ['Jazz', 'Neo Soul', 'Lo-Fi'];
+  const useOpenVoicing = openVoicingGenres.includes(genre);
+
+  // ボイシング生成（前のコードからスムーズに）
+  const notes = getVoicedChordNotes(passingRoot, passingQuality, prevChord.notes, undefined, useOpenVoicing);
+
+  return {
+    id: generateId(),
+    root: passingRoot,
+    quality: passingQuality,
+    notes,
+    displayName: getChordDisplayName(passingRoot, passingQuality),
+    durationBeats: 2, // パッシングコードは2拍
+  };
 }
