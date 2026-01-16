@@ -230,6 +230,233 @@ const PROGRESSION_TEMPLATES: Record<string, ProgressionTemplate[]> = {
     [[1, 'min7'], [6, 'maj7'], [4, 'maj7'], [5, '7']],
     [[6, 'min'], [4, 'maj'], [5, 'maj'], [3, 'min']],
   ],
+
+  // Drum & Bass progressions (リキッドDnB、ダーク系)
+  'Drum & Bass_Chill': [
+    [[1, 'min7'], [4, 'min7'], [6, 'maj7'], [5, '7']],   // Liquid DnB
+    [[6, 'min7'], [4, 'maj7'], [1, 'maj7'], [5, '7']],
+    [[2, 'min7'], [5, '7'], [1, 'maj7'], [6, 'min7']],
+  ],
+  'Drum & Bass_Dark': [
+    [[1, 'min'], [6, 'maj'], [7, 'maj'], [5, 'maj']],    // Neurofunk
+    [[1, 'min7'], [1, 'min7'], [4, 'min7'], [5, '7']],
+    [[6, 'min'], [7, 'dim'], [1, 'min'], [5, '7']],
+  ],
+  'Drum & Bass_Uplifting': [
+    [[1, 'maj7'], [5, '7'], [6, 'min7'], [4, 'maj7']],
+    [[4, 'maj7'], [5, 'maj'], [6, 'min7'], [1, 'maj7']],
+  ],
+  'Drum & Bass_Energetic': [
+    [[6, 'min'], [4, 'maj'], [1, 'maj'], [5, 'maj']],
+    [[1, 'min'], [4, 'min'], [5, 'maj'], [1, 'min']],
+  ],
+
+  // Trance progressions (アンセミック、リフト)
+  'Trance_Uplifting': [
+    [[6, 'min'], [4, 'maj'], [1, 'maj'], [5, 'maj']],     // Classic trance
+    [[1, 'min'], [6, 'maj'], [3, 'maj'], [7, 'maj']],     // Emotional trance
+    [[4, 'maj'], [5, 'maj'], [6, 'min'], [1, 'maj']],
+  ],
+  'Trance_Energetic': [
+    [[1, 'min'], [5, 'maj'], [6, 'maj'], [4, 'maj']],
+    [[6, 'min'], [5, 'maj'], [4, 'maj'], [1, 'min']],
+  ],
+  'Trance_Dreamy': [
+    [[1, 'maj7'], [5, 'sus4'], [6, 'min7'], [4, 'maj7']],
+    [[4, 'add9'], [5, 'add9'], [6, 'min'], [1, 'maj7']],
+  ],
+  'Trance_Melancholic': [
+    [[6, 'min'], [3, 'min'], [4, 'maj'], [1, 'maj']],
+    [[1, 'min'], [6, 'maj'], [4, 'maj'], [5, 'maj']],
+  ],
+
+  // Techno progressions (ミニマル、ハイプノティック)
+  'Techno_Dark': [
+    [[1, 'min'], [1, 'min'], [4, 'min'], [4, 'min']],     // Minimal
+    [[1, 'min7'], [6, 'maj'], [1, 'min7'], [1, 'min7']],
+    [[5, 'min'], [1, 'min'], [5, 'min'], [1, 'min']],
+  ],
+  'Techno_Energetic': [
+    [[1, 'min'], [4, 'min'], [1, 'min'], [5, 'min']],
+    [[6, 'min'], [6, 'min'], [4, 'maj'], [4, 'maj']],
+  ],
+  'Techno_Chill': [
+    [[1, 'min7'], [4, 'min7'], [1, 'min7'], [1, 'min7']],
+    [[2, 'min7'], [5, '7'], [1, 'min7'], [1, 'min7']],
+  ],
+
+  // Dubstep progressions (ダークでヘビー)
+  'Dubstep_Dark': [
+    [[1, 'min'], [6, 'maj'], [7, 'maj'], [5, 'maj']],     // Heavy
+    [[1, 'min'], [1, 'min'], [6, 'maj'], [6, 'maj']],
+    [[6, 'min'], [7, 'dim'], [1, 'min'], [5, 'maj']],
+  ],
+  'Dubstep_Energetic': [
+    [[6, 'min'], [4, 'maj'], [1, 'maj'], [5, 'maj']],
+    [[1, 'min'], [5, 'maj'], [6, 'maj'], [4, 'maj']],
+  ],
+  'Dubstep_Melancholic': [
+    [[6, 'min7'], [4, 'maj7'], [1, 'maj7'], [5, '7']],
+    [[1, 'min7'], [6, 'maj7'], [4, 'maj7'], [5, '7']],
+  ],
+
+  // Ambient progressions (浮遊感、アトモスフェリック)
+  'Ambient_Dreamy': [
+    [[1, 'maj7'], [4, 'maj9'], [6, 'min9'], [5, 'sus4']], // Ethereal
+    [[4, 'add9'], [1, 'maj7'], [4, 'add9'], [1, 'maj7']],
+    [[1, 'maj9'], [1, 'maj9'], [4, 'maj9'], [4, 'maj9']],
+  ],
+  'Ambient_Chill': [
+    [[1, 'maj7'], [6, 'min7'], [4, 'maj7'], [4, 'maj7']],
+    [[2, 'min9'], [5, 'add9'], [1, 'maj9'], [1, 'maj9']],
+  ],
+  'Ambient_Melancholic': [
+    [[6, 'min9'], [4, 'maj9'], [1, 'maj9'], [5, 'sus4']],
+    [[1, 'min9'], [4, 'min7'], [6, 'maj7'], [5, 'sus4']],
+  ],
+
+  // Bossa Nova progressions (ブラジリアンジャズ)
+  'Bossa Nova_Chill': [
+    [[1, 'maj7'], [2, 'min7'], [3, 'min7'], [6, 'min7']], // Jobim style
+    [[2, 'min7'], [5, '7'], [1, 'maj7'], [6, 'min7']],
+    [[1, 'maj9'], [2, 'min7'], [5, '7'], [1, 'maj7']],
+  ],
+  'Bossa Nova_Dreamy': [
+    [[1, 'maj9'], [4, 'maj7'], [3, 'min7'], [6, 'min9']],
+    [[2, 'm7b5'], [5, '7'], [1, 'maj9'], [4, 'maj7']],
+  ],
+  'Bossa Nova_Uplifting': [
+    [[1, 'maj7'], [5, '7'], [6, 'min7'], [4, 'maj7']],
+    [[1, 'maj7'], [4, 'maj7'], [3, 'min7'], [6, 'min7']],
+  ],
+  'Bossa Nova_Melancholic': [
+    [[1, 'min7'], [4, 'min7'], [5, '7'], [1, 'min7']],
+    [[2, 'm7b5'], [5, '7'], [1, 'min7'], [6, 'maj7']],
+  ],
+
+  // Reggae progressions (ジャマイカン)
+  'Reggae_Chill': [
+    [[1, 'maj'], [5, 'maj'], [1, 'maj'], [5, 'maj']],     // One Drop
+    [[1, 'maj'], [4, 'maj'], [1, 'maj'], [5, 'maj']],
+    [[1, 'maj7'], [4, 'maj7'], [1, 'maj7'], [5, '7']],
+  ],
+  'Reggae_Uplifting': [
+    [[1, 'maj'], [4, 'maj'], [5, 'maj'], [1, 'maj']],
+    [[6, 'min'], [5, 'maj'], [4, 'maj'], [1, 'maj']],
+  ],
+  'Reggae_Melancholic': [
+    [[1, 'min'], [4, 'min'], [5, 'maj'], [1, 'min']],
+    [[6, 'min'], [4, 'maj'], [1, 'min'], [5, 'maj']],
+  ],
+
+  // Country progressions (ナッシュビル)
+  'Country_Uplifting': [
+    [[1, 'maj'], [4, 'maj'], [1, 'maj'], [5, 'maj']],     // Nashville
+    [[1, 'maj'], [5, 'maj'], [6, 'min'], [4, 'maj']],
+    [[1, 'maj'], [4, 'maj'], [5, 'maj'], [1, 'maj']],
+  ],
+  'Country_Melancholic': [
+    [[1, 'maj'], [6, 'min'], [4, 'maj'], [5, 'maj']],
+    [[6, 'min'], [4, 'maj'], [1, 'maj'], [5, 'maj']],
+  ],
+  'Country_Chill': [
+    [[1, 'maj7'], [4, 'maj'], [5, '7'], [1, 'maj']],
+    [[1, 'add9'], [4, 'add9'], [5, 'sus4'], [1, 'add9']],
+  ],
+
+  // Blues progressions (12小節ブルース系)
+  'Blues_Chill': [
+    [[1, '7'], [4, '7'], [1, '7'], [5, '7']],             // 12-bar blues
+    [[1, '7'], [1, '7'], [4, '7'], [1, '7']],
+    [[1, '9'], [4, '7'], [1, '7'], [5, '7']],
+  ],
+  'Blues_Dark': [
+    [[1, 'min7'], [4, 'min7'], [1, 'min7'], [5, '7']],    // Minor blues
+    [[1, 'min7'], [4, 'min7'], [5, '7'], [1, 'min7']],
+  ],
+  'Blues_Melancholic': [
+    [[1, '7'], [4, '7'], [5, '7'], [4, '7']],
+    [[6, 'min7'], [2, 'min7'], [5, '7'], [1, '7']],
+  ],
+  'Blues_Uplifting': [
+    [[1, '7'], [4, '7'], [1, '7'], [5, '7']],
+    [[1, 'maj7'], [4, '7'], [1, 'maj7'], [5, '7']],
+  ],
+
+  // Gospel progressions (教会音楽)
+  'Gospel_Uplifting': [
+    [[4, 'maj7'], [5, '7'], [3, 'min7'], [6, 'min7']],    // Worship
+    [[1, 'maj'], [4, 'maj'], [1, 'maj'], [5, 'maj']],
+    [[4, 'maj7'], [3, 'min7'], [2, 'min7'], [5, '7']],
+  ],
+  'Gospel_Melancholic': [
+    [[1, 'maj7'], [6, 'min7'], [4, 'maj7'], [5, '7']],
+    [[2, 'min7'], [5, '7'], [1, 'maj7'], [6, 'min7']],
+  ],
+  'Gospel_Energetic': [
+    [[1, 'maj'], [1, 'maj'], [4, 'maj'], [1, 'maj']],
+    [[4, 'maj'], [5, 'maj'], [1, 'maj'], [1, 'maj']],
+  ],
+  'Gospel_Dreamy': [
+    [[1, 'maj9'], [4, 'maj9'], [5, '9'], [1, 'maj9']],
+    [[4, 'maj7'], [3, 'min7'], [6, 'min7'], [2, 'min7']],
+  ],
+
+  // Metal progressions (パワーコード、ダーク)
+  'Metal_Dark': [
+    [[1, 'min'], [6, 'maj'], [7, 'maj'], [1, 'min']],     // Power metal
+    [[1, 'min'], [2, 'dim'], [5, 'maj'], [1, 'min']],
+    [[1, 'min'], [4, 'min'], [5, 'min'], [1, 'min']],
+  ],
+  'Metal_Energetic': [
+    [[1, 'min'], [5, 'maj'], [6, 'maj'], [4, 'maj']],
+    [[1, 'min'], [6, 'maj'], [3, 'maj'], [7, 'maj']],
+  ],
+  'Metal_Melancholic': [
+    [[6, 'min'], [4, 'maj'], [1, 'maj'], [5, 'maj']],
+    [[1, 'min'], [4, 'min'], [6, 'maj'], [5, 'maj']],
+  ],
+
+  // Latin progressions (サルサ、ボレロ)
+  'Latin_Energetic': [
+    [[1, 'maj'], [4, 'maj'], [5, '7'], [1, 'maj']],       // Salsa
+    [[2, 'min7'], [5, '7'], [1, 'maj7'], [1, 'maj7']],
+    [[1, 'maj'], [6, 'min'], [2, 'min7'], [5, '7']],
+  ],
+  'Latin_Chill': [
+    [[1, 'maj7'], [2, 'min7'], [5, '7'], [1, 'maj7']],    // Bolero
+    [[6, 'min7'], [2, 'min7'], [5, '7'], [1, 'maj7']],
+  ],
+  'Latin_Uplifting': [
+    [[1, 'maj'], [4, 'maj'], [1, 'maj'], [5, '7']],
+    [[4, 'maj'], [5, '7'], [1, 'maj'], [6, 'min']],
+  ],
+  'Latin_Melancholic': [
+    [[1, 'min7'], [4, 'min7'], [5, '7'], [1, 'min7']],
+    [[6, 'min7'], [5, '7'], [4, 'maj7'], [1, 'min7']],
+  ],
+
+  // City Pop progressions (80年代日本シティポップ)
+  'City Pop_Chill': [
+    [[1, 'maj7'], [3, 'min7'], [6, 'min7'], [2, 'min7']], // 定番進行
+    [[4, 'maj7'], [3, 'min7'], [2, 'min7'], [5, '7']],    // 王道パターン
+    [[1, 'maj9'], [6, 'min7'], [2, 'min7'], [5, '9']],
+  ],
+  'City Pop_Uplifting': [
+    [[1, 'maj7'], [5, '7'], [6, 'min7'], [4, 'maj7']],
+    [[4, 'maj7'], [5, '7'], [3, 'min7'], [6, 'min7']],
+    [[1, 'maj7'], [2, 'min7'], [3, 'min7'], [4, 'maj7']],
+  ],
+  'City Pop_Dreamy': [
+    [[1, 'maj9'], [4, 'maj7'], [3, 'min7'], [6, 'min9']], // Midnight vibes
+    [[2, 'min9'], [5, '9'], [1, 'maj9'], [6, 'min7']],
+    [[4, 'add9'], [5, 'add9'], [6, 'min7'], [1, 'maj7']],
+  ],
+  'City Pop_Melancholic': [
+    [[6, 'min7'], [5, '7'], [4, 'maj7'], [3, 'min7']],
+    [[1, 'maj7'], [6, 'min7'], [4, 'maj7'], [5, 'sus4']],
+    [[2, 'min7'], [5, '7'], [1, 'maj7'], [4, 'maj7']],
+  ],
 };
 
 // Default/fallback progressions
@@ -293,6 +520,19 @@ function enrichChord(quality: ChordQuality, genre: Genre): ChordQuality {
     'House': 0.2,
     'UK Garage': 0.4,
     'Future Bass': 0.3,
+    'Drum & Bass': 0.3,
+    'Trance': 0.1,
+    'Techno': 0.0,
+    'Dubstep': 0.1,
+    'Ambient': 0.5,
+    'Bossa Nova': 0.6,
+    'Reggae': 0.1,
+    'Country': 0.0,
+    'Blues': 0.2,
+    'Gospel': 0.4,
+    'Metal': 0.0,
+    'Latin': 0.2,
+    'City Pop': 0.5,
   };
 
   const chance = ENRICHMENT_CHANCE[genre] || 0;
