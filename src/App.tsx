@@ -18,6 +18,7 @@ function App() {
     swapChord,
     insertChord,
     regenerateSingleChord,
+    updateChordDuration,
   } = useChordProgression();
 
   // Drag state for chord swapping
@@ -73,6 +74,7 @@ function App() {
             onDrop={handleDrop}
             onInsertChord={insertChord}
             onRegenerateChord={regenerateSingleChord}
+            onDurationChange={updateChordDuration}
           />
         )}
 
@@ -94,6 +96,7 @@ function App() {
               onDrop={handleDrop}
               onInsertChord={insertChord}
               onRegenerateChord={regenerateSingleChord}
+              onDurationChange={updateChordDuration}
             />
           ))}
         </div>

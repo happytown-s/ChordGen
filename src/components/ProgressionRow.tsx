@@ -17,6 +17,7 @@ interface ProgressionRowProps {
   onDrop: (progId: string, index: number) => void;
   onInsertChord: (progId: string, insertIndex: number) => void;
   onRegenerateChord: (progId: string, index: number) => void;
+  onDurationChange: (progId: string, index: number, durationBeats: number) => void;
 }
 
 export function ProgressionRow({
@@ -31,6 +32,7 @@ export function ProgressionRow({
   onDrop,
   onInsertChord,
   onRegenerateChord,
+  onDurationChange,
 }: ProgressionRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
@@ -196,6 +198,7 @@ export function ProgressionRow({
               onDragOver={onDragOver}
               onDrop={onDrop}
               onRegenerate={onRegenerateChord}
+              onDurationChange={onDurationChange}
             />
           </div>
         ))}

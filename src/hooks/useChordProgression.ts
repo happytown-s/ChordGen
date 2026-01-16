@@ -202,6 +202,35 @@ function reducer(state: AppState, action: AppAction): AppState {
         bridgeProgressions: newBridges,
       };
     }
+    case 'UPDATE_CHORD_DURATION': {
+      const { progressionId, chordIndex, durationBeats } = action.payload;
+      // 0.5〜8拍の範囲に制限
+      const clampedDuration = Math.max(0.5, Math.min(8, durationBeats));
+
+      // メイン進行の更新
+      if (state.mainProgression.id === progressionId) {
+        const newChords = [...state.mainProgression.chords];
+        newChords[chordIndex] = { ...newChords[chordIndex], durationBeats: clampedDuration };
+        return {
+          ...state,
+          mainProgression: { ...state.mainProgression, chords: newChords },
+        };
+      }
+
+      // ブリッジ進行の更新
+      const newBridges = state.bridgeProgressions.map(p => {
+        if (p.id === progressionId) {
+          const newChords = [...p.chords];
+          newChords[chordIndex] = { ...newChords[chordIndex], durationBeats: clampedDuration };
+          return { ...p, chords: newChords };
+        }
+        return p;
+      });
+      return {
+        ...state,
+        bridgeProgressions: newBridges,
+      };
+    }
     default:
       return state;
   }
@@ -297,6 +326,14 @@ export function useChordProgression() {
     });
   }, [state.settings, state.mainProgression, state.bridgeProgressions]);
 
+  // Update duration of a single chord
+  const updateChordDuration = useCallback((progressionId: string, chordIndex: number, durationBeats: number) => {
+    dispatch({
+      type: 'UPDATE_CHORD_DURATION',
+      payload: { progressionId, chordIndex, durationBeats },
+    });
+  }, []);
+
   // Generate initial progressions on mount
   useEffect(() => {
     generate();
@@ -315,5 +352,6 @@ export function useChordProgression() {
     swapChord,
     insertChord,
     regenerateSingleChord,
+    updateChordDuration,
   };
 }

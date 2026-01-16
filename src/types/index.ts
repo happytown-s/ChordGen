@@ -79,4 +79,5 @@ export type AppAction =
   | { type: 'SWAP_CHORD'; payload: { sourceProgId: string; targetProgId: string; sourceIdx: number; targetIdx: number } }
   | { type: 'SET_PROGRESSIONS'; payload: { main: ChordProgression; bridges: ChordProgression[] } }
   | { type: 'INSERT_CHORD'; payload: { progressionId: string; insertIndex: number; newChord: Chord } }
-  | { type: 'REGENERATE_SINGLE_CHORD'; payload: { progressionId: string; chordIndex: number; newChord: Chord } };
+  | { type: 'REGENERATE_SINGLE_CHORD'; payload: { progressionId: string; chordIndex: number; newChord: Chord } }
+  | { type: 'UPDATE_CHORD_DURATION'; payload: { progressionId: string; chordIndex: number; durationBeats: number } };

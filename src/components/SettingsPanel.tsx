@@ -72,14 +72,30 @@ export function SettingsPanel({
         {/* Tempo */}
         <div className="flex items-center gap-2">
           <label className="text-slate-300 text-sm font-medium">Tempo:</label>
+          <button
+            onClick={() => onTempoChange(Math.max(40, tempo - 5))}
+            disabled={tempo <= 40}
+            className="w-7 h-7 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm transition-colors border border-slate-600"
+            title="テンポを5 BPM下げる"
+          >
+            ◀
+          </button>
           <input
             type="number"
             value={tempo}
             onChange={(e) => onTempoChange(Math.max(40, Math.min(200, parseInt(e.target.value) || 120)))}
             min={40}
             max={200}
-            className="bg-slate-700 text-white px-3 py-1.5 rounded-md border border-slate-600 focus:outline-none focus:border-blue-500 w-20"
+            className="bg-slate-700 text-white px-3 py-1.5 rounded-md border border-slate-600 focus:outline-none focus:border-blue-500 w-20 text-center"
           />
+          <button
+            onClick={() => onTempoChange(Math.min(200, tempo + 5))}
+            disabled={tempo >= 200}
+            className="w-7 h-7 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm transition-colors border border-slate-600"
+            title="テンポを5 BPM上げる"
+          >
+            ▶
+          </button>
           <span className="text-slate-400 text-sm">BPM</span>
         </div>
 
