@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useEffect } from 'react';
 import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression } from '../types';
-import { generateProgressions, regenerateProgression, generatePassingChord } from '../utils/chordGenerator';
+import { generateProgressions, regenerateProgression, generatePassingChord, generateSingleChord } from '../utils/chordGenerator';
 
 const initialState: AppState = {
   settings: {
@@ -175,6 +175,33 @@ function reducer(state: AppState, action: AppAction): AppState {
         };
       }
     }
+    case 'REGENERATE_SINGLE_CHORD': {
+      const { progressionId, chordIndex, newChord } = action.payload;
+
+      // Update main progression
+      if (state.mainProgression.id === progressionId) {
+        const newChords = [...state.mainProgression.chords];
+        newChords[chordIndex] = newChord;
+        return {
+          ...state,
+          mainProgression: { ...state.mainProgression, chords: newChords },
+        };
+      }
+
+      // Update bridge progressions
+      const newBridges = state.bridgeProgressions.map(p => {
+        if (p.id === progressionId) {
+          const newChords = [...p.chords];
+          newChords[chordIndex] = newChord;
+          return { ...p, chords: newChords };
+        }
+        return p;
+      });
+      return {
+        ...state,
+        bridgeProgressions: newBridges,
+      };
+    }
     default:
       return state;
   }
@@ -247,6 +274,29 @@ export function useChordProgression() {
     });
   }, [state.settings, state.mainProgression, state.bridgeProgressions]);
 
+  // Regenerate a single chord in a progression
+  const regenerateSingleChord = useCallback((progressionId: string, chordIndex: number) => {
+    const { key, genre } = state.settings;
+
+    // Find the progression
+    const prog = state.mainProgression.id === progressionId
+      ? state.mainProgression
+      : state.bridgeProgressions.find(p => p.id === progressionId);
+
+    if (!prog || chordIndex < 0 || chordIndex >= prog.chords.length) return;
+
+    const oldChord = prog.chords[chordIndex];
+    const prevChord = chordIndex > 0 ? prog.chords[chordIndex - 1] : null;
+
+    // Generate new chord with same duration but different voicing/quality
+    const newChord = generateSingleChord(oldChord, prevChord, key, genre);
+
+    dispatch({
+      type: 'REGENERATE_SINGLE_CHORD',
+      payload: { progressionId, chordIndex, newChord },
+    });
+  }, [state.settings, state.mainProgression, state.bridgeProgressions]);
+
   // Generate initial progressions on mount
   useEffect(() => {
     generate();
@@ -264,5 +314,6 @@ export function useChordProgression() {
     regenerateBridge,
     swapChord,
     insertChord,
+    regenerateSingleChord,
   };
 }

@@ -73,4 +73,5 @@ export type AppAction =
   | { type: 'REGENERATE_BRIDGE'; payload: number }
   | { type: 'SWAP_CHORD'; payload: { sourceProgId: string; targetProgId: string; sourceIdx: number; targetIdx: number } }
   | { type: 'SET_PROGRESSIONS'; payload: { main: ChordProgression; bridges: ChordProgression[] } }
-  | { type: 'INSERT_CHORD'; payload: { progressionId: string; insertIndex: number; newChord: Chord } };
+  | { type: 'INSERT_CHORD'; payload: { progressionId: string; insertIndex: number; newChord: Chord } }
+  | { type: 'REGENERATE_SINGLE_CHORD'; payload: { progressionId: string; chordIndex: number; newChord: Chord } };

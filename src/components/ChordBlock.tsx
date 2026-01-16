@@ -15,6 +15,7 @@ interface ChordBlockProps {
   onDragStart: (progId: string, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (progId: string, index: number) => void;
+  onRegenerate: (progId: string, index: number) => void;
 }
 
 export function ChordBlock({
@@ -28,6 +29,7 @@ export function ChordBlock({
   onDragStart,
   onDragOver,
   onDrop,
+  onRegenerate,
 }: ChordBlockProps) {
   const dragRef = useRef<HTMLDivElement>(null);
   const [midiFilePath, setMidiFilePath] = useState<string | null>(null);
@@ -80,6 +82,11 @@ export function ChordBlock({
     downloadMidi(midiBlob, filename);
   };
 
+  const handleRegenerate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRegenerate(progressionId, index);
+  };
+
   const inElectron = isElectron();
 
   return (
@@ -89,9 +96,8 @@ export function ChordBlock({
       onDragStart={handleDragStart}
       onDragOver={onDragOver}
       onDrop={handleDrop}
-      className={`bg-slate-700 rounded-lg p-4 cursor-grab active:cursor-grabbing hover:bg-slate-600 transition-colors border min-w-[220px] ${
-        isPlaying ? 'border-green-500 bg-slate-600' : 'border-slate-600 hover:border-blue-500'
-      }`}
+      className={`bg-slate-700 rounded-lg p-4 cursor-grab active:cursor-grabbing hover:bg-slate-600 transition-colors border min-w-[220px] ${isPlaying ? 'border-green-500 bg-slate-600' : 'border-slate-600 hover:border-blue-500'
+        }`}
     >
       {/* Chord Name */}
       <div className="text-center mb-3">
@@ -114,6 +120,15 @@ export function ChordBlock({
             <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
           </svg>
           Play
+        </button>
+        <button
+          onClick={handleRegenerate}
+          className="flex items-center gap-1 px-2 py-1 rounded bg-slate-600 hover:bg-slate-500 text-white text-xs transition-colors"
+          title="このコードを再生成"
+        >
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0v2.43l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clipRule="evenodd" />
+          </svg>
         </button>
         {!inElectron && (
           <button

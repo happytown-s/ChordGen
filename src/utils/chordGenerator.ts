@@ -417,3 +417,46 @@ export function generatePassingChord(
     durationBeats: 2, // パッシングコードは2拍
   };
 }
+
+// Generate a new chord variation with same root but possibly different quality
+// 既存コードのバリエーションを生成（ルートは維持、クオリティやボイシングを変更）
+export function generateSingleChord(
+  oldChord: Chord,
+  prevChord: Chord | null,
+  key: Key,
+  genre: Genre
+): Chord {
+  // 候補となるクオリティリスト（ジャンルに応じて）
+  const baseQualities: ChordQuality[] = key.scale === 'minor'
+    ? ['min7', 'min9', 'min11', 'm7b5', '7', 'dim7']
+    : ['maj7', 'maj9', 'maj13', '7', '9', '13', 'min7', 'min9'];
+
+  // 現在のクオリティを除外
+  const availableQualities = baseQualities.filter(q => q !== oldChord.quality);
+
+  // ランダムに選択してEnrichmentを適用
+  let newQuality = availableQualities[Math.floor(Math.random() * availableQualities.length)] || oldChord.quality;
+  newQuality = enrichChord(newQuality, genre);
+
+  // オープンボイシング判定
+  const openVoicingGenres: Genre[] = ['Jazz', 'Neo Soul', 'Lo-Fi'];
+  const useOpenVoicing = openVoicingGenres.includes(genre);
+
+  // ボイシング生成（前のコードからスムーズに）
+  const notes = getVoicedChordNotes(
+    oldChord.root,
+    newQuality,
+    prevChord?.notes || null,
+    undefined,
+    useOpenVoicing
+  );
+
+  return {
+    id: Math.random().toString(36).substring(2, 9),
+    root: oldChord.root,
+    quality: newQuality,
+    notes,
+    displayName: getChordDisplayName(oldChord.root, newQuality),
+    durationBeats: oldChord.durationBeats, // デュレーションは維持
+  };
+}
