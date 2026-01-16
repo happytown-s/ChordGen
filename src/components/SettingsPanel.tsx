@@ -15,7 +15,7 @@ interface SettingsPanelProps {
   onGenerate: () => void;
 }
 
-const GENRES: Genre[] = ['Lo-Fi', 'Neo Soul', 'Jazz', 'Pop', 'R&B', 'Rock', 'EDM', 'Hip Hop', 'Funk'];
+const GENRES: Genre[] = ['Lo-Fi', 'Neo Soul', 'Jazz', 'Pop', 'R&B', 'Rock', 'EDM', 'Hip Hop', 'Funk', 'House', 'UK Garage', 'Future Bass'];
 const MOODS: Mood[] = ['Uplifting', 'Melancholic', 'Chill', 'Dark', 'Dreamy', 'Energetic'];
 const SCALES: ScaleType[] = ['major', 'minor'];
 const SOUND_TYPES: { value: SoundType; label: string }[] = [

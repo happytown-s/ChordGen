@@ -37,7 +37,7 @@ export interface ChordProgression {
 }
 
 // Genre options
-export type Genre = 'Lo-Fi' | 'Neo Soul' | 'Jazz' | 'Pop' | 'R&B' | 'Rock' | 'EDM' | 'Hip Hop' | 'Funk';
+export type Genre = 'Lo-Fi' | 'Neo Soul' | 'Jazz' | 'Pop' | 'R&B' | 'Rock' | 'EDM' | 'Hip Hop' | 'Funk' | 'House' | 'UK Garage' | 'Future Bass';
 
 // Mood options
 export type Mood = 'Uplifting' | 'Melancholic' | 'Chill' | 'Dark' | 'Dreamy' | 'Energetic';

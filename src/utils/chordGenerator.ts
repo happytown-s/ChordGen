@@ -166,6 +166,70 @@ const PROGRESSION_TEMPLATES: Record<string, ProgressionTemplate[]> = {
     [[1, 'min7'], [4, 'min7'], [5, '7'], [1, 'min7']],
     [[1, 'min7'], [6, 'maj7'], [2, 'm7b5'], [5, '7']],
   ],
+
+  // House progressions (4つ打ち、アンセミック)
+  'House_Energetic': [
+    [[6, 'min'], [4, 'maj'], [1, 'maj'], [5, 'maj']],  // Classic house
+    [[1, 'min7'], [5, '7'], [6, 'maj7'], [4, 'maj7']], // Deep house
+    [[4, 'maj'], [1, 'maj'], [5, 'maj'], [6, 'min']],  // Piano house
+  ],
+  'House_Uplifting': [
+    [[1, 'maj'], [5, 'maj'], [6, 'min'], [4, 'maj']],  // Euphoric house
+    [[4, 'maj7'], [5, 'maj'], [6, 'min'], [1, 'maj']], // Progressive house
+    [[1, 'maj'], [4, 'maj'], [1, 'maj'], [5, 'maj']],  // Classic pump
+  ],
+  'House_Chill': [
+    [[2, 'min7'], [5, '7'], [1, 'maj7'], [4, 'maj7']], // Jazzy house
+    [[1, 'maj9'], [6, 'min7'], [4, 'maj9'], [5, '7']], // Deep chill
+    [[6, 'min7'], [2, 'min7'], [5, '7'], [1, 'maj7']], // Soulful house
+  ],
+  'House_Dreamy': [
+    [[1, 'maj7'], [4, 'maj9'], [6, 'min7'], [5, 'sus4']], // Melodic house
+    [[4, 'maj9'], [5, 'maj'], [6, 'min9'], [1, 'maj7']],
+  ],
+
+  // UK Garage progressions (2ステップ、シンコペーション)
+  'UK Garage_Chill': [
+    [[1, 'maj7'], [6, 'min7'], [2, 'min7'], [5, '7']],   // Classic 2step
+    [[4, 'maj7'], [3, 'min7'], [6, 'min7'], [5, '7']],   // UKG staple
+    [[1, 'maj9'], [4, 'maj7'], [5, '7'], [6, 'min7']],
+  ],
+  'UK Garage_Uplifting': [
+    [[1, 'maj7'], [5, '7'], [6, 'min7'], [4, 'maj7']],   // Speed garage
+    [[4, 'maj7'], [1, 'maj7'], [5, '7'], [6, 'min7']],
+    [[1, 'maj'], [4, 'maj7'], [6, 'min7'], [5, '7']],    // Vocal UKG
+  ],
+  'UK Garage_Energetic': [
+    [[6, 'min7'], [5, '7'], [4, 'maj7'], [1, 'maj7']],   // Bassline
+    [[1, 'maj7'], [4, 'maj7'], [5, '7'], [5, '7']],      // 4x4 garage
+    [[2, 'min7'], [5, '7'], [1, 'maj'], [6, 'min7']],
+  ],
+  'UK Garage_Dreamy': [
+    [[1, 'maj9'], [6, 'min9'], [4, 'maj9'], [5, '9']],   // Chilled UKG
+    [[4, 'maj9'], [5, 'add9'], [6, 'min7'], [1, 'maj9']],
+  ],
+
+  // Future Bass progressions (エモーショナル、シンセリード)
+  'Future Bass_Uplifting': [
+    [[6, 'min'], [4, 'maj'], [1, 'maj'], [5, 'maj']],    // Classic FutureBass drop
+    [[1, 'maj'], [5, 'maj'], [6, 'min'], [4, 'maj']],    // Euphoric
+    [[4, 'maj'], [5, 'maj'], [6, 'min'], [1, 'maj']],    // Kawaii future
+  ],
+  'Future Bass_Energetic': [
+    [[6, 'min7'], [4, 'maj7'], [1, 'maj7'], [5, '7']],
+    [[1, 'add9'], [5, 'add9'], [6, 'min'], [4, 'add9']], // Sparkling
+    [[4, 'maj'], [1, 'maj'], [5, 'sus4'], [5, 'maj']],
+  ],
+  'Future Bass_Dreamy': [
+    [[1, 'maj7'], [4, 'maj9'], [6, 'min7'], [5, 'add9']], // Melodic FB
+    [[6, 'min9'], [4, 'maj9'], [1, 'maj9'], [5, 'add9']],
+    [[4, 'add9'], [5, 'add9'], [6, 'min7'], [1, 'maj7']],
+  ],
+  'Future Bass_Melancholic': [
+    [[6, 'min7'], [3, 'min7'], [4, 'maj7'], [1, 'maj7']], // Sad future
+    [[1, 'min7'], [6, 'maj7'], [4, 'maj7'], [5, '7']],
+    [[6, 'min'], [4, 'maj'], [5, 'maj'], [3, 'min']],
+  ],
 };
 
 // Default/fallback progressions
@@ -216,7 +280,7 @@ function adjustForMinorKey(degree: number, quality: ChordQuality, key: Key): [nu
 // Probabilistically enrich a chord quality based on genre
 function enrichChord(quality: ChordQuality, genre: Genre): ChordQuality {
   // Enrichment probabilities (0.0 to 1.0)
-  const ENRICHMENT_CHANCE = {
+  const ENRICHMENT_CHANCE: Record<Genre, number> = {
     'Neo Soul': 0.6,
     'Jazz': 0.5,
     'Lo-Fi': 0.4,
@@ -226,6 +290,9 @@ function enrichChord(quality: ChordQuality, genre: Genre): ChordQuality {
     'Rock': 0.0,
     'Pop': 0.1,
     'EDM': 0.1,
+    'House': 0.2,
+    'UK Garage': 0.4,
+    'Future Bass': 0.3,
   };
 
   const chance = ENRICHMENT_CHANCE[genre] || 0;
