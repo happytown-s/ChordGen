@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { Key } from '../types';
 import { isNoteInScale, midiToNoteName } from '../utils/musicTheory';
 
@@ -25,20 +26,23 @@ export function PianoRoll({ notes, keyValue, width = 200, height = 60 }: PianoRo
   const blackKeyHeight = height * 0.6;
 
   // Calculate white key positions
-  const whiteKeys: { note: number; x: number }[] = [];
-  const blackKeys: { note: number; x: number }[] = [];
+  const { whiteKeys, blackKeys } = useMemo(() => {
+    const whiteKeys: { note: number; x: number }[] = [];
+    const blackKeys: { note: number; x: number }[] = [];
 
-  let whiteKeyIndex = 0;
-  for (let note = START_NOTE; note < END_NOTE; note++) {
-    if (isBlackKey(note)) {
-      // Position black key between the previous white key
-      const x = whiteKeyIndex * whiteKeyWidth - blackKeyWidth / 2;
-      blackKeys.push({ note, x });
-    } else {
-      whiteKeys.push({ note, x: whiteKeyIndex * whiteKeyWidth });
-      whiteKeyIndex++;
+    let whiteKeyIndex = 0;
+    for (let note = START_NOTE; note < END_NOTE; note++) {
+      if (isBlackKey(note)) {
+        // Position black key between the previous white key
+        const x = whiteKeyIndex * whiteKeyWidth - blackKeyWidth / 2;
+        blackKeys.push({ note, x });
+      } else {
+        whiteKeys.push({ note, x: whiteKeyIndex * whiteKeyWidth });
+        whiteKeyIndex++;
+      }
     }
-  }
+    return { whiteKeys, blackKeys };
+  }, [whiteKeyWidth, blackKeyWidth]);
 
   return (
     <svg width={width} height={height} className="rounded overflow-hidden">
