@@ -620,8 +620,14 @@ function pickRandom<T>(arr: T[]): T {
 
 // Pick multiple unique random items
 function pickMultipleRandom<T>(arr: T[], count: number): T[] {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, arr.length));
+  const result = [...arr];
+  const k = Math.min(count, result.length);
+
+  for (let i = 0; i < k; i++) {
+    const j = i + Math.floor(Math.random() * (result.length - i));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result.slice(0, k);
 }
 
 // Main export: Generate main + bridge progressions
