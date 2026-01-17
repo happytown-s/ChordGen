@@ -1,11 +1,12 @@
 // 統合ピアノロール画面
 // コードとベースラインを同時に表示し、パートごとにミュート可能
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Chord, BasslinePattern } from '../types';
 import { generateProgressionBassline } from '../utils/basslineGenerator';
 import { playBassline, playProgression } from '../utils/audioEngine';
 import type { SoundType } from '../utils/audioEngine';
+import { VerticalKeyboard } from './VerticalKeyboard';
 
 interface FullPianoRollProps {
     chords: Chord[];
@@ -37,12 +38,32 @@ export function FullPianoRoll({
     // トータル拍数を計算
     const totalBeats = chords.reduce((acc, c) => acc + c.durationBeats, 0);
 
+    // MIDIノート範囲を計算
+    const { minNote, maxNote } = useMemo(() => {
+        let min = 127, max = 0;
+        chords.forEach(c => {
+            c.notes.forEach(n => {
+                min = Math.min(min, n);
+                max = Math.max(max, n);
+            });
+        });
+        bassNotes.forEach(n => {
+            min = Math.min(min, n.midiNote);
+            max = Math.max(max, n.midiNote);
+        });
+        // パディングを追加
+        return {
+            minNote: Math.max(0, min - 2),
+            maxNote: Math.min(127, max + 2),
+        };
+    }, [chords, bassNotes]);
+
     // ミュート状態変更時にコールバック
     useEffect(() => {
         onMuteChange?.(chordsMuted, bassMuted);
     }, [chordsMuted, bassMuted, onMuteChange]);
 
-    // ピアノロールを描画
+    // ピアノロールを描画（ノートブロックのみ、鍵盤はSVGで表示）
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -51,93 +72,37 @@ export function FullPianoRoll({
 
         const width = canvas.width;
         const height = canvas.height;
-
-        // 背景
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(0, 0, width, height);
-
-        // MIDIノート範囲を計算
-        let minNote = 127, maxNote = 0;
-        chords.forEach(c => {
-            c.notes.forEach(n => {
-                minNote = Math.min(minNote, n);
-                maxNote = Math.max(maxNote, n);
-            });
-        });
-        bassNotes.forEach(n => {
-            minNote = Math.min(minNote, n.midiNote);
-            maxNote = Math.max(maxNote, n.midiNote);
-        });
-
-        // パディングを追加
-        minNote = Math.max(0, minNote - 2);
-        maxNote = Math.min(127, maxNote + 2);
         const noteRange = maxNote - minNote + 1;
-
-        // キーボード（左側）- DAW風シンプルデザイン
-        const keyboardWidth = 45;
-        const rollWidth = width - keyboardWidth;
         const noteHeight = Math.max(6, height / noteRange);
 
-        // 各行を描画
+        // 背景（行ごとに色分け）
         for (let note = minNote; note <= maxNote; note++) {
             const y = height - ((note - minNote + 1) * noteHeight);
             const noteIndex = note % 12;
             const isBlackKey = [1, 3, 6, 8, 10].includes(noteIndex);
             const isC = noteIndex === 0;
 
-            // キーボード部分の背景
-            if (isBlackKey) {
-                // 黒鍵行
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(0, y, keyboardWidth, noteHeight);
-                // 黒鍵マーク（短い黒バー）
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(keyboardWidth - 20, y + 1, 18, noteHeight - 2);
-            } else {
-                // 白鍵行
-                ctx.fillStyle = '#e2e8f0';
-                ctx.fillRect(0, y, keyboardWidth, noteHeight);
-                // 境界線
-                ctx.strokeStyle = '#94a3b8';
-                ctx.lineWidth = 0.5;
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(keyboardWidth, y);
-                ctx.stroke();
-            }
-
-            // オクターブラベル（Cのみ）- フォントサイズを鍵盤高さに合わせる
-            if (isC) {
-                const octave = Math.floor(note / 12) - 1;
-                const fontSize = Math.min(Math.max(noteHeight - 2, 6), 12);
-                ctx.font = `bold ${fontSize}px sans-serif`;
-                ctx.fillStyle = '#475569';
-                ctx.textAlign = 'left';
-                ctx.fillText(`C${octave}`, 2, y + noteHeight - Math.max(1, (noteHeight - fontSize) / 2));
-            }
-
-            // ピアノロール部分の背景
+            // 背景色（黒鍵行は暗め）
             ctx.fillStyle = isBlackKey ? '#1e293b' : '#2d3a4f';
-            ctx.fillRect(keyboardWidth, y, rollWidth, noteHeight);
+            ctx.fillRect(0, y, width, noteHeight);
 
             // C音の行に薄い線を追加（オクターブ境界）
             if (isC) {
                 ctx.strokeStyle = '#475569';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.moveTo(keyboardWidth, y + noteHeight);
+                ctx.moveTo(0, y + noteHeight);
                 ctx.lineTo(width, y + noteHeight);
                 ctx.stroke();
             }
         }
 
         // ビートグリッド
-        const beatWidth = rollWidth / totalBeats;
+        const beatWidth = width / totalBeats;
         ctx.strokeStyle = '#475569';
         ctx.lineWidth = 1;
         for (let beat = 0; beat <= totalBeats; beat++) {
-            const x = keyboardWidth + beat * beatWidth;
+            const x = beat * beatWidth;
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, height);
@@ -148,7 +113,7 @@ export function FullPianoRoll({
         ctx.strokeStyle = '#64748b';
         ctx.lineWidth = 2;
         for (let beat = 0; beat <= totalBeats; beat += 4) {
-            const x = keyboardWidth + beat * beatWidth;
+            const x = beat * beatWidth;
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, height);
@@ -159,7 +124,7 @@ export function FullPianoRoll({
         {
             let currentBeatPos = 0;
             chords.forEach(chord => {
-                const x = keyboardWidth + currentBeatPos * beatWidth;
+                const x = currentBeatPos * beatWidth;
                 const w = chord.durationBeats * beatWidth - 2;
 
                 chord.notes.forEach(note => {
@@ -180,7 +145,7 @@ export function FullPianoRoll({
         // ベースノートを描画（ミュート時はグレーアウト）
         if (bassNotes.length > 0) {
             bassNotes.forEach(note => {
-                const x = keyboardWidth + note.startBeat * beatWidth;
+                const x = note.startBeat * beatWidth;
                 const w = note.durationBeats * beatWidth - 2;
                 const y = height - ((note.midiNote - minNote + 1) * noteHeight);
 
@@ -196,7 +161,7 @@ export function FullPianoRoll({
 
         // 再生位置インジケーター
         if (currentBeat !== null) {
-            const x = keyboardWidth + currentBeat * beatWidth;
+            const x = currentBeat * beatWidth;
             ctx.strokeStyle = '#f97316';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -205,7 +170,7 @@ export function FullPianoRoll({
             ctx.stroke();
         }
 
-    }, [chords, bassNotes, chordsMuted, bassMuted, totalBeats, currentBeat]);
+    }, [chords, bassNotes, chordsMuted, bassMuted, totalBeats, currentBeat, minNote, maxNote]);
 
     // 再生ハンドラ
     const handlePlay = () => {
@@ -309,13 +274,22 @@ export function FullPianoRoll({
                 </div>
             </div>
 
-            {/* キャンバス */}
-            <canvas
-                ref={canvasRef}
-                width={600}
-                height={150}
-                className="w-full rounded border border-slate-700"
-            />
+            {/* ピアノロール（鍵盤 + キャンバス） */}
+            <div className="flex rounded border border-slate-700 overflow-hidden">
+                {/* SVG鍵盤 */}
+                <VerticalKeyboard
+                    minNote={minNote}
+                    maxNote={maxNote}
+                    height={150}
+                />
+                {/* キャンバス */}
+                <canvas
+                    ref={canvasRef}
+                    width={555}
+                    height={150}
+                    className="flex-1"
+                />
+            </div>
 
             {/* 凡例 */}
             <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
