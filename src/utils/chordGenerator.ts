@@ -1,5 +1,5 @@
 import type { Key, Genre, Mood, Chord, ChordProgression, ChordQuality, NoteName } from '../types';
-import { getChordDisplayName, getScaleDegreeNote, getVoicedChordNotes, NOTE_TO_MIDI, NOTE_NAMES, getScaleNotes } from './musicTheory';
+import { getChordDisplayName, getScaleDegreeNote, getVoicedChordNotes, NOTE_TO_MIDI, NOTE_NAMES, getScaleNotes, getRandomBorrowableChord } from './musicTheory';
 
 // Generate unique ID
 function generateId(): string {
@@ -767,3 +767,44 @@ export function generateSingleChord(
     durationBeats: oldChord.durationBeats, // デュレーションは維持
   };
 }
+
+// ============================================================
+// モーダルインターチェンジ（借用和音）コード生成
+// ============================================================
+
+// Generate a modal interchange chord (borrowed from parallel scale)
+// モーダルインターチェンジコードを生成（パラレルスケールから借用）
+export function generateModalInterchangeChord(
+  oldChord: Chord,
+  prevChord: Chord | null,
+  key: Key,
+  genre: Genre
+): Chord {
+  // 借用可能なコードをランダムに選択
+  const borrowed = getRandomBorrowableChord(key);
+
+  // オープンボイシング判定
+  const openVoicingGenres: Genre[] = ['Jazz', 'Neo Soul', 'Lo-Fi'];
+  const useOpenVoicing = openVoicingGenres.includes(genre);
+
+  // ボイシング生成（前のコードからスムーズに）
+  const notes = getVoicedChordNotes(
+    borrowed.root,
+    borrowed.quality,
+    prevChord?.notes || null,
+    undefined,
+    useOpenVoicing
+  );
+
+  return {
+    id: Math.random().toString(36).substring(2, 9),
+    root: borrowed.root,
+    quality: borrowed.quality,
+    notes,
+    displayName: getChordDisplayName(borrowed.root, borrowed.quality),
+    durationBeats: oldChord.durationBeats, // デュレーションは維持
+    borrowedFrom: borrowed.borrowedFrom,
+    borrowedDegree: borrowed.degree,
+  };
+}
+

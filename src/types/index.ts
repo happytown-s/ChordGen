@@ -19,6 +19,9 @@ export type ChordQuality =
   | 'maj13' | 'min13' | '13'
   | 'sus2' | 'sus4' | 'add9';
 
+// 借用元モード（モーダルインターチェンジ用）
+export type BorrowedFrom = 'parallel-minor' | 'parallel-major' | null;
+
 // Single chord
 export interface Chord {
   id: string;
@@ -27,6 +30,8 @@ export interface Chord {
   notes: number[]; // MIDI note numbers
   displayName: string;
   durationBeats: number;
+  borrowedFrom?: BorrowedFrom; // 借用元モード（nullまたはundefinedの場合はダイアトニック）
+  borrowedDegree?: string; // 借用度数（例: "♭VI", "iv"）
 }
 
 // Chord progression
@@ -80,4 +85,7 @@ export type AppAction =
   | { type: 'SET_PROGRESSIONS'; payload: { main: ChordProgression; bridges: ChordProgression[] } }
   | { type: 'INSERT_CHORD'; payload: { progressionId: string; insertIndex: number; newChord: Chord } }
   | { type: 'REGENERATE_SINGLE_CHORD'; payload: { progressionId: string; chordIndex: number; newChord: Chord } }
-  | { type: 'UPDATE_CHORD_DURATION'; payload: { progressionId: string; chordIndex: number; durationBeats: number } };
+  | { type: 'UPDATE_CHORD_DURATION'; payload: { progressionId: string; chordIndex: number; durationBeats: number } }
+  | { type: 'APPLY_MODAL_INTERCHANGE'; payload: { progressionId: string; chordIndex: number; newChord: Chord } }
+  | { type: 'APPLY_SPECIFIC_BORROWED_CHORD'; payload: { progressionId: string; chordIndex: number; newChord: Chord } };
+

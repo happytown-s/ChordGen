@@ -1,6 +1,7 @@
 import { useReducer, useCallback, useEffect } from 'react';
-import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression } from '../types';
-import { generateProgressions, regenerateProgression, generatePassingChord, generateSingleChord } from '../utils/chordGenerator';
+import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression, Chord, NoteName, ChordQuality, BorrowedFrom } from '../types';
+import { generateProgressions, regenerateProgression, generatePassingChord, generateSingleChord, generateModalInterchangeChord } from '../utils/chordGenerator';
+import { getBorrowableChords, getChordDisplayName, getVoicedChordNotes } from '../utils/musicTheory';
 
 const initialState: AppState = {
   settings: {
@@ -231,6 +232,60 @@ function reducer(state: AppState, action: AppAction): AppState {
         bridgeProgressions: newBridges,
       };
     }
+    case 'APPLY_MODAL_INTERCHANGE': {
+      const { progressionId, chordIndex, newChord } = action.payload;
+
+      // メイン進行の更新
+      if (state.mainProgression.id === progressionId) {
+        const newChords = [...state.mainProgression.chords];
+        newChords[chordIndex] = newChord;
+        return {
+          ...state,
+          mainProgression: { ...state.mainProgression, chords: newChords },
+        };
+      }
+
+      // ブリッジ進行の更新
+      const newBridges = state.bridgeProgressions.map(p => {
+        if (p.id === progressionId) {
+          const newChords = [...p.chords];
+          newChords[chordIndex] = newChord;
+          return { ...p, chords: newChords };
+        }
+        return p;
+      });
+      return {
+        ...state,
+        bridgeProgressions: newBridges,
+      };
+    }
+    case 'APPLY_SPECIFIC_BORROWED_CHORD': {
+      const { progressionId, chordIndex, newChord } = action.payload;
+
+      // メイン進行の更新
+      if (state.mainProgression.id === progressionId) {
+        const newChords = [...state.mainProgression.chords];
+        newChords[chordIndex] = newChord;
+        return {
+          ...state,
+          mainProgression: { ...state.mainProgression, chords: newChords },
+        };
+      }
+
+      // ブリッジ進行の更新
+      const newBridges = state.bridgeProgressions.map(p => {
+        if (p.id === progressionId) {
+          const newChords = [...p.chords];
+          newChords[chordIndex] = newChord;
+          return { ...p, chords: newChords };
+        }
+        return p;
+      });
+      return {
+        ...state,
+        bridgeProgressions: newBridges,
+      };
+    }
     default:
       return state;
   }
@@ -334,6 +389,89 @@ export function useChordProgression() {
     });
   }, []);
 
+  // Apply modal interchange (borrowed chord from parallel scale)
+  // モーダルインターチェンジを適用（パラレルスケールから借用コードに置換）
+  const applyModalInterchange = useCallback((progressionId: string, chordIndex: number) => {
+    const { key, genre } = state.settings;
+
+    // Find the progression
+    const prog = state.mainProgression.id === progressionId
+      ? state.mainProgression
+      : state.bridgeProgressions.find(p => p.id === progressionId);
+
+    if (!prog || chordIndex < 0 || chordIndex >= prog.chords.length) return;
+
+    const oldChord = prog.chords[chordIndex];
+    const prevChord = chordIndex > 0 ? prog.chords[chordIndex - 1] : null;
+
+    // Generate modal interchange chord
+    const newChord = generateModalInterchangeChord(oldChord, prevChord, key, genre);
+
+    dispatch({
+      type: 'APPLY_MODAL_INTERCHANGE',
+      payload: { progressionId, chordIndex, newChord },
+    });
+  }, [state.settings, state.mainProgression, state.bridgeProgressions]);
+
+  // Get borrowable chords for the current key
+  // 現在のキーで借用可能なコード一覧を取得
+  const getBorrowableChordsForKey = useCallback(() => {
+    const { key } = state.settings;
+    return getBorrowableChords(key);
+  }, [state.settings]);
+
+  // Apply a specific borrowed chord (user-selected)
+  // 特定の借用コードを適用（ユーザーが選択）
+  const applySpecificBorrowedChord = useCallback((
+    progressionId: string,
+    chordIndex: number,
+    borrowedRoot: NoteName,
+    borrowedQuality: ChordQuality,
+    borrowedDegree: string,
+    borrowedFromMode: 'parallel-minor' | 'parallel-major'
+  ) => {
+    const { genre } = state.settings;
+
+    // Find the progression
+    const prog = state.mainProgression.id === progressionId
+      ? state.mainProgression
+      : state.bridgeProgressions.find(p => p.id === progressionId);
+
+    if (!prog || chordIndex < 0 || chordIndex >= prog.chords.length) return;
+
+    const oldChord = prog.chords[chordIndex];
+    const prevChord = chordIndex > 0 ? prog.chords[chordIndex - 1] : null;
+
+    // オープンボイシング判定
+    const openVoicingGenres: Genre[] = ['Jazz', 'Neo Soul', 'Lo-Fi'];
+    const useOpenVoicing = openVoicingGenres.includes(genre);
+
+    // ボイシング生成
+    const notes = getVoicedChordNotes(
+      borrowedRoot,
+      borrowedQuality,
+      prevChord?.notes || null,
+      undefined,
+      useOpenVoicing
+    );
+
+    const newChord: Chord = {
+      id: Math.random().toString(36).substring(2, 9),
+      root: borrowedRoot,
+      quality: borrowedQuality,
+      notes,
+      displayName: getChordDisplayName(borrowedRoot, borrowedQuality),
+      durationBeats: oldChord.durationBeats,
+      borrowedFrom: borrowedFromMode,
+      borrowedDegree: borrowedDegree,
+    };
+
+    dispatch({
+      type: 'APPLY_SPECIFIC_BORROWED_CHORD',
+      payload: { progressionId, chordIndex, newChord },
+    });
+  }, [state.settings, state.mainProgression, state.bridgeProgressions]);
+
   // Generate initial progressions on mount
   useEffect(() => {
     generate();
@@ -353,5 +491,8 @@ export function useChordProgression() {
     insertChord,
     regenerateSingleChord,
     updateChordDuration,
+    applyModalInterchange,
+    getBorrowableChordsForKey,
+    applySpecificBorrowedChord,
   };
 }

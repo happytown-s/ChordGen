@@ -284,3 +284,53 @@ function getSmoothedVoicing(possibleNotes: number[][], previousNotes: number[]):
 
   return result.sort((a, b) => a - b);
 }
+
+// ============================================================
+// モーダルインターチェンジ（借用和音）関連
+// ============================================================
+
+// 借用可能なコード定義
+// [半音オフセット, クオリティ, 度数表記]
+type BorrowableChordDef = [number, ChordQuality, string];
+
+// メジャーキーからマイナーキーへの借用（パラレルマイナー）
+// ♭III, ♭VI, ♭VII, iv, ii°
+const MAJOR_TO_MINOR_BORROWABLE: BorrowableChordDef[] = [
+  [3, 'maj7', '♭III'],    // ♭IIImaj7 (例: Cメジャー→E♭maj7)
+  [8, 'maj7', '♭VI'],     // ♭VImaj7 (例: Cメジャー→A♭maj7)
+  [10, '7', '♭VII'],      // ♭VII7 (例: Cメジャー→B♭7)
+  [5, 'min7', 'iv'],      // ivmin7 (例: Cメジャー→Fmin7)
+  [2, 'm7b5', 'ii°'],     // iiø7 (例: Cメジャー→Dm7♭5)
+];
+
+// マイナーキーからメジャーキーへの借用（パラレルメジャー）
+// IV, V, II
+const MINOR_TO_MAJOR_BORROWABLE: BorrowableChordDef[] = [
+  [5, 'maj7', 'IV'],      // IVmaj7 (例: Cマイナー→Fmaj7)
+  [7, '7', 'V'],          // V7 (例: Cマイナー→G7) ※ハーモニックマイナーからも
+  [2, 'min7', 'II'],      // IImin7 (例: Cマイナー→Dmin7)
+];
+
+// 借用可能なコード一覧を取得
+export function getBorrowableChords(key: Key): { root: NoteName; quality: ChordQuality; degree: string; borrowedFrom: 'parallel-minor' | 'parallel-major' }[] {
+  const rootIndex = NOTE_NAMES.indexOf(key.root);
+  const borrowableList = key.scale === 'major' ? MAJOR_TO_MINOR_BORROWABLE : MINOR_TO_MAJOR_BORROWABLE;
+  const borrowedFrom = key.scale === 'major' ? 'parallel-minor' : 'parallel-major';
+
+  return borrowableList.map(([semitones, quality, degree]) => {
+    const chordRootIndex = (rootIndex + semitones) % 12;
+    return {
+      root: NOTE_NAMES[chordRootIndex],
+      quality,
+      degree,
+      borrowedFrom: borrowedFrom as 'parallel-minor' | 'parallel-major',
+    };
+  });
+}
+
+// ランダムに借用コードを1つ選択
+export function getRandomBorrowableChord(key: Key): { root: NoteName; quality: ChordQuality; degree: string; borrowedFrom: 'parallel-minor' | 'parallel-major' } {
+  const borrowableChords = getBorrowableChords(key);
+  return borrowableChords[Math.floor(Math.random() * borrowableChords.length)];
+}
+

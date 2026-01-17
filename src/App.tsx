@@ -19,6 +19,9 @@ function App() {
     insertChord,
     regenerateSingleChord,
     updateChordDuration,
+    applyModalInterchange,
+    getBorrowableChordsForKey,
+    applySpecificBorrowedChord,
   } = useChordProgression();
 
   // Drag state for chord swapping
@@ -75,6 +78,9 @@ function App() {
             onInsertChord={insertChord}
             onRegenerateChord={regenerateSingleChord}
             onDurationChange={updateChordDuration}
+            onApplyModalInterchange={applyModalInterchange}
+            getBorrowableChords={getBorrowableChordsForKey}
+            onApplySpecificBorrowedChord={applySpecificBorrowedChord}
           />
         )}
 
@@ -97,6 +103,9 @@ function App() {
               onInsertChord={insertChord}
               onRegenerateChord={regenerateSingleChord}
               onDurationChange={updateChordDuration}
+              onApplyModalInterchange={applyModalInterchange}
+              getBorrowableChords={getBorrowableChordsForKey}
+              onApplySpecificBorrowedChord={applySpecificBorrowedChord}
             />
           ))}
         </div>
