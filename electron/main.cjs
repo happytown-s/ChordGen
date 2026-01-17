@@ -10,6 +10,7 @@ function createMidiIcon() {
   return nativeImage.createFromDataURL(iconDataUrl);
 }
 
+const tempFiles = [];
 let mainWindow;
 
 function createWindow() {
@@ -66,6 +67,7 @@ ipcMain.handle('create-midi-file', async (event, { data, filename }) => {
     const buffer = Buffer.from(data, 'base64');
     fs.writeFileSync(filePath, buffer);
 
+    tempFiles.push(filePath);
     return filePath;
   } catch (error) {
     console.error('Error creating MIDI file:', error);
@@ -90,4 +92,13 @@ ipcMain.on('ondragstart', (event, filePath) => {
 // Clean up temp files on quit
 app.on('will-quit', () => {
   // Cleanup temp MIDI files if needed
+  tempFiles.forEach(file => {
+    try {
+      if (fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
+    } catch (error) {
+      console.error(`Error deleting temp file ${file}:`, error);
+    }
+  });
 });
