@@ -1,8 +1,9 @@
 // Note names (C, C#, D, etc.)
 export type NoteName = 'C' | 'C#' | 'D' | 'D#' | 'E' | 'F' | 'F#' | 'G' | 'G#' | 'A' | 'A#' | 'B';
-
-// Scale types
 export type ScaleType = 'major' | 'minor';
+// 借用元モード（モーダルインターチェンジ用）
+export type BorrowedFrom = 'parallel-minor' | 'parallel-major' | null;
+export type BasslinePattern = 'none' | 'root-only' | 'root-fifth' | 'walking' | 'syncopated' | 'octave';
 
 // Key definition
 export interface Key {
@@ -18,9 +19,6 @@ export type ChordQuality =
   | 'maj11' | 'min11' | '11'
   | 'maj13' | 'min13' | '13'
   | 'sus2' | 'sus4' | 'add9';
-
-// 借用元モード（モーダルインターチェンジ用）
-export type BorrowedFrom = 'parallel-minor' | 'parallel-major' | null;
 
 // Single chord
 export interface Chord {

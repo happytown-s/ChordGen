@@ -1,7 +1,13 @@
 import MidiWriter from 'midi-writer-js';
-import type { Chord, ChordProgression } from '../types';
+import type { Chord, ChordProgression, BasslinePattern } from '../types';
+import { generateProgressionBassline, type BassNote } from './basslineGenerator';
 
 const { Track, NoteEvent, Writer } = MidiWriter;
+
+// 拍数をMIDIティック数に変換（128 ticks = 1拍 = 4分音符）
+function beatsToTicks(beats: number): number {
+  return Math.round(beats * 128);
+}
 
 // Convert chord to MIDI track
 function chordToTrack(chord: Chord, tempo: number) {
@@ -9,9 +15,10 @@ function chordToTrack(chord: Chord, tempo: number) {
   track.setTempo(tempo);
 
   // Add all notes of the chord simultaneously
+  // Use tick-based duration for precise bar alignment
   const noteEvent = new NoteEvent({
     pitch: chord.notes,
-    duration: `${chord.durationBeats}`,
+    duration: `T${beatsToTicks(chord.durationBeats)}`,
     velocity: 80,
   });
   track.addEvent(noteEvent);
@@ -19,19 +26,53 @@ function chordToTrack(chord: Chord, tempo: number) {
   return track;
 }
 
-// Convert chord progression to MIDI track
-function progressionToTrack(progression: ChordProgression, tempo: number) {
+// Convert chord progression to MIDI track (chords only)
+function progressionToChordTrack(progression: ChordProgression, tempo: number) {
   const track = new Track();
   track.setTempo(tempo);
 
-  // Add each chord sequentially
+  // Add each chord sequentially with tick-based duration
   for (const chord of progression.chords) {
     const noteEvent = new NoteEvent({
       pitch: chord.notes,
-      duration: `${chord.durationBeats}`,
+      duration: `T${beatsToTicks(chord.durationBeats)}`,
       velocity: 80,
     });
     track.addEvent(noteEvent);
+  }
+
+  return track;
+}
+
+// Convert bassline to MIDI track
+function basslineToTrack(bassNotes: BassNote[], tempo: number) {
+  const track = new Track();
+  track.setTempo(tempo);
+
+  let currentTick = 0;
+
+  for (const note of bassNotes) {
+    const noteStartTick = beatsToTicks(note.startBeat);
+
+    // 休符（ウェイト）を追加
+    if (noteStartTick > currentTick) {
+      track.addEvent(new NoteEvent({
+        pitch: [0], // 空のノート（休符として機能）
+        duration: `T${noteStartTick - currentTick}`,
+        velocity: 0,
+        wait: `T${noteStartTick - currentTick}`,
+      }));
+      currentTick = noteStartTick;
+    }
+
+    // ベースノートを追加
+    const noteDurationTicks = beatsToTicks(note.durationBeats);
+    track.addEvent(new NoteEvent({
+      pitch: [note.midiNote],
+      duration: `T${noteDurationTicks}`,
+      velocity: note.velocity,
+    }));
+    currentTick = noteStartTick + noteDurationTicks;
   }
 
   return track;
@@ -54,10 +95,28 @@ export function exportChordToMidi(chord: Chord, tempo: number): Blob {
   return new Blob([ab], { type: mimeString });
 }
 
-// Export chord progression as MIDI blob
-export function exportProgressionToMidi(progression: ChordProgression, tempo: number): Blob {
-  const track = progressionToTrack(progression, tempo);
-  const writer = new Writer([track]);
+// Export chord progression as MIDI blob (with optional bassline)
+export function exportProgressionToMidi(
+  progression: ChordProgression,
+  tempo: number,
+  basslinePattern: BasslinePattern = 'none'
+): Blob {
+  const tracks = [];
+
+  // コードトラック
+  const chordTrack = progressionToChordTrack(progression, tempo);
+  tracks.push(chordTrack);
+
+  // ベースライントラック（パターンが指定されている場合）
+  if (basslinePattern !== 'none') {
+    const bassNotes = generateProgressionBassline(progression.chords, basslinePattern);
+    if (bassNotes.length > 0) {
+      const bassTrack = basslineToTrack(bassNotes, tempo);
+      tracks.push(bassTrack);
+    }
+  }
+
+  const writer = new Writer(tracks);
   const dataUri = writer.dataUri();
 
   // Convert data URI to Blob

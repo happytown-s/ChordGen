@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import type { ChordProgression, Key, SoundType, NoteName, ChordQuality } from '../types';
+import type { ChordProgression, Key, SoundType, NoteName, ChordQuality, BasslinePattern } from '../types';
 import { ChordBlock } from './ChordBlock';
 import { InsertButton } from './InsertButton';
 import { exportProgressionToMidi, getProgressionFilename, downloadMidi, isElectron, createMidiFileForDrag } from '../utils/midiExport';
@@ -47,6 +47,7 @@ export function ProgressionRow({
   const [isPlaying, setIsPlaying] = useState(false);
   const stopRef = useRef<(() => void) | null>(null);
   const [midiFilePath, setMidiFilePath] = useState<string | null>(null);
+  const [basslinePattern, setBasslinePattern] = useState<BasslinePattern>('none');
 
   // Pre-create MIDI file for native drag in Electron
   useEffect(() => {
@@ -83,7 +84,7 @@ export function ProgressionRow({
   }, [isPlaying, progression, tempo, soundType]);
 
   const handleDownloadAll = () => {
-    const midiBlob = exportProgressionToMidi(progression, tempo);
+    const midiBlob = exportProgressionToMidi(progression, tempo, basslinePattern);
     const filename = getProgressionFilename(progression);
     downloadMidi(midiBlob, filename);
   };
@@ -168,6 +169,21 @@ export function ProgressionRow({
               MIDI
             </button>
           )}
+
+          {/* Bassline Pattern Selector */}
+          <select
+            value={basslinePattern}
+            onChange={(e) => setBasslinePattern(e.target.value as BasslinePattern)}
+            className="px-2 py-1 rounded text-sm bg-slate-700 text-slate-200 border border-slate-600 hover:border-blue-500 transition-colors"
+            title="ベースラインパターン"
+          >
+            <option value="none">Bass: なし</option>
+            <option value="root-only">Bass: ルート</option>
+            <option value="root-fifth">Bass: ルート+5度</option>
+            <option value="walking">Bass: ウォーキング</option>
+            <option value="syncopated">Bass: シンコペ</option>
+            <option value="octave">Bass: オクターブ</option>
+          </select>
 
           {/* Regenerate Button */}
           <button
