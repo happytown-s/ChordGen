@@ -7,14 +7,6 @@ import { generateProgressionBassline } from '../utils/basslineGenerator';
 import { playBassline, playProgression } from '../utils/audioEngine';
 import type { SoundType } from '../utils/audioEngine';
 
-// ノート名変換
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-function midiToNoteName(midi: number): string {
-    const octave = Math.floor(midi / 12) - 1;
-    const note = NOTE_NAMES[midi % 12];
-    return `${note}${octave}`;
-}
-
 interface FullPianoRollProps {
     chords: Chord[];
     basslinePattern: BasslinePattern;
@@ -82,32 +74,52 @@ export function FullPianoRoll({
         maxNote = Math.min(127, maxNote + 2);
         const noteRange = maxNote - minNote + 1;
 
-        // キーボードラベル（左側）
-        const keyboardWidth = 40;
+        // キーボード（左側）- 鍵盤風デザイン
+        const keyboardWidth = 50;
         const rollWidth = width - keyboardWidth;
         const noteHeight = Math.max(6, height / noteRange);
 
-        // グリッドとキーボード背景
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(0, 0, keyboardWidth, height);
-
-        // ノートラベルを描画
-        ctx.font = '9px monospace';
-        ctx.textAlign = 'right';
+        // 鍵盤を描画
         for (let note = minNote; note <= maxNote; note++) {
-            const y = height - ((note - minNote + 0.5) * noteHeight);
-            const noteName = midiToNoteName(note);
-            const isBlackKey = noteName.includes('#');
+            const y = height - ((note - minNote + 1) * noteHeight);
+            const noteIndex = note % 12; // 0=C, 1=C#, 2=D, ...
+            const isBlackKey = [1, 3, 6, 8, 10].includes(noteIndex); // C#, D#, F#, G#, A#
+            const isC = noteIndex === 0;
 
-            // 黒鍵の背景
+            // 白鍵・黒鍵の背景（キーボード部分）
             if (isBlackKey) {
+                // 黒鍵
                 ctx.fillStyle = '#1e293b';
-                ctx.fillRect(keyboardWidth, y - noteHeight / 2, rollWidth, noteHeight);
+                ctx.fillRect(0, y, keyboardWidth * 0.7, noteHeight);
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(keyboardWidth * 0.7, y, keyboardWidth * 0.3, noteHeight);
+            } else {
+                // 白鍵
+                ctx.fillStyle = '#e2e8f0';
+                ctx.fillRect(0, y, keyboardWidth - 2, noteHeight);
+                // 白鍵の境界線
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(0, y + noteHeight);
+                ctx.lineTo(keyboardWidth - 2, y + noteHeight);
+                ctx.stroke();
             }
 
-            // ラベル
-            ctx.fillStyle = isBlackKey ? '#94a3b8' : '#e2e8f0';
-            ctx.fillText(noteName, keyboardWidth - 4, y + 3);
+            // オクターブラベル（Cのみ）
+            if (isC) {
+                const octave = Math.floor(note / 12) - 1;
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillStyle = '#1e293b';
+                ctx.textAlign = 'left';
+                ctx.fillText(`C${octave}`, 3, y + noteHeight - 2);
+            }
+
+            // ピアノロール部分の背景（黒鍵行は暗め）
+            if (isBlackKey) {
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(keyboardWidth, y, rollWidth, noteHeight);
+            }
         }
 
         // ビートグリッド
