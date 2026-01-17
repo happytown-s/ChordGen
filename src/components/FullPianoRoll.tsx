@@ -74,67 +74,60 @@ export function FullPianoRoll({
         maxNote = Math.min(127, maxNote + 2);
         const noteRange = maxNote - minNote + 1;
 
-        // キーボード（左側）- 鍵盤風デザイン
-        const keyboardWidth = 50;
+        // キーボード（左側）- DAW風シンプルデザイン
+        const keyboardWidth = 45;
         const rollWidth = width - keyboardWidth;
         const noteHeight = Math.max(6, height / noteRange);
 
-        // まず全行の背景を描画
-        for (let note = minNote; note <= maxNote; note++) {
-            const y = height - ((note - minNote + 1) * noteHeight);
-            const noteIndex = note % 12;
-            const isBlackKey = [1, 3, 6, 8, 10].includes(noteIndex);
-
-            // ピアノロール部分の背景（黒鍵行は暗め）
-            ctx.fillStyle = isBlackKey ? '#1e293b' : '#243044';
-            ctx.fillRect(keyboardWidth, y, rollWidth, noteHeight);
-        }
-
-        // 白鍵を先に描画
+        // 各行を描画
         for (let note = minNote; note <= maxNote; note++) {
             const y = height - ((note - minNote + 1) * noteHeight);
             const noteIndex = note % 12;
             const isBlackKey = [1, 3, 6, 8, 10].includes(noteIndex);
             const isC = noteIndex === 0;
 
-            if (!isBlackKey) {
-                // 白鍵
-                ctx.fillStyle = '#f1f5f9';
-                ctx.fillRect(0, y, keyboardWidth - 1, noteHeight - 1);
-
-                // 白鍵の境界線（E-F間とB-C間は太めに）
-                const nextIsBlackGap = noteIndex === 4 || noteIndex === 11; // E or B
-                ctx.strokeStyle = nextIsBlackGap ? '#64748b' : '#cbd5e1';
-                ctx.lineWidth = nextIsBlackGap ? 1 : 0.5;
+            // キーボード部分の背景
+            if (isBlackKey) {
+                // 黒鍵行
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, y, keyboardWidth, noteHeight);
+                // 黒鍵マーク（短い黒バー）
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(keyboardWidth - 20, y + 1, 18, noteHeight - 2);
+            } else {
+                // 白鍵行
+                ctx.fillStyle = '#e2e8f0';
+                ctx.fillRect(0, y, keyboardWidth, noteHeight);
+                // 境界線
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 0.5;
                 ctx.beginPath();
                 ctx.moveTo(0, y);
-                ctx.lineTo(keyboardWidth - 1, y);
+                ctx.lineTo(keyboardWidth, y);
                 ctx.stroke();
-
-                // オクターブラベル（Cのみ）
-                if (isC) {
-                    const octave = Math.floor(note / 12) - 1;
-                    ctx.font = 'bold 9px sans-serif';
-                    ctx.fillStyle = '#475569';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(`C${octave}`, 4, y + noteHeight - 3);
-                }
             }
-        }
 
-        // 黒鍵を上から描画（重ねる）
-        for (let note = minNote; note <= maxNote; note++) {
-            const y = height - ((note - minNote + 1) * noteHeight);
-            const noteIndex = note % 12;
-            const isBlackKey = [1, 3, 6, 8, 10].includes(noteIndex);
+            // オクターブラベル（Cのみ）
+            if (isC) {
+                const octave = Math.floor(note / 12) - 1;
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillStyle = '#475569';
+                ctx.textAlign = 'left';
+                ctx.fillText(`C${octave}`, 3, y + noteHeight - 2);
+            }
 
-            if (isBlackKey) {
-                // 黒鍵（短めに描画）
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(0, y, keyboardWidth * 0.6, noteHeight);
-                // ハイライト
-                ctx.fillStyle = '#334155';
-                ctx.fillRect(0, y, keyboardWidth * 0.6, 2);
+            // ピアノロール部分の背景
+            ctx.fillStyle = isBlackKey ? '#1e293b' : '#2d3a4f';
+            ctx.fillRect(keyboardWidth, y, rollWidth, noteHeight);
+
+            // C音の行に薄い線を追加（オクターブ境界）
+            if (isC) {
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(keyboardWidth, y + noteHeight);
+                ctx.lineTo(width, y + noteHeight);
+                ctx.stroke();
             }
         }
 
