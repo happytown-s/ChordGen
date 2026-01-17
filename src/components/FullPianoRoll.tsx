@@ -1,7 +1,7 @@
 // 統合ピアノロール画面
 // コードとベースラインを同時に表示し、パートごとにミュート可能
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import type { Chord, BasslinePattern } from '../types';
 import { generateProgressionBassline } from '../utils/basslineGenerator';
 import { playBassline, playProgression } from '../utils/audioEngine';
@@ -26,9 +26,12 @@ export function FullPianoRoll({
     const [chordsMuted, setChordsMuted] = useState(false);
     const [bassMuted, setBassMuted] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [currentBeat, setCurrentBeat] = useState<number | null>(null);
+    // currentBeat is now a ref to avoid re-renders during animation
+    const currentBeatRef = useRef<number | null>(null);
+
     const stopRefs = useRef<{ chord?: () => void; bass?: () => void }>({});
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animationFrameRef = useRef<number | null>(null);
 
     // ベースラインノートを生成
     const bassNotes = basslinePattern !== 'none'
@@ -58,22 +61,53 @@ export function FullPianoRoll({
         };
     }, [chords, bassNotes]);
 
+    // Store latest data for animation loop to avoid stale closures
+    const dataRef = useRef({
+        chords,
+        bassNotes,
+        minNote,
+        maxNote,
+        totalBeats,
+        chordsMuted,
+        bassMuted
+    });
+
+    // Update dataRef when props/state change
+    useEffect(() => {
+        dataRef.current = {
+            chords,
+            bassNotes,
+            minNote,
+            maxNote,
+            totalBeats,
+            chordsMuted,
+            bassMuted
+        };
+    }, [chords, bassNotes, minNote, maxNote, totalBeats, chordsMuted, bassMuted]);
+
     // ミュート状態変更時にコールバック
     useEffect(() => {
         onMuteChange?.(chordsMuted, bassMuted);
     }, [chordsMuted, bassMuted, onMuteChange]);
 
-    // ピアノロールを描画（ノートブロックのみ、鍵盤はSVGで表示）
-    useEffect(() => {
+    // Draw function that reads from refs
+    const drawCanvas = useCallback((beat: number | null) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        const {
+            chords, bassNotes, minNote, maxNote, totalBeats, chordsMuted, bassMuted
+        } = dataRef.current;
+
         const width = canvas.width;
         const height = canvas.height;
         const noteRange = maxNote - minNote + 1;
         const noteHeight = Math.max(6, height / noteRange);
+
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
 
         // 背景（行ごとに色分け）
         for (let note = minNote; note <= maxNote; note++) {
@@ -101,8 +135,8 @@ export function FullPianoRoll({
         const beatWidth = width / totalBeats;
         ctx.strokeStyle = '#475569';
         ctx.lineWidth = 1;
-        for (let beat = 0; beat <= totalBeats; beat++) {
-            const x = beat * beatWidth;
+        for (let b = 0; b <= totalBeats; b++) {
+            const x = b * beatWidth;
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, height);
@@ -112,8 +146,8 @@ export function FullPianoRoll({
         // 小節線（4拍ごと）
         ctx.strokeStyle = '#64748b';
         ctx.lineWidth = 2;
-        for (let beat = 0; beat <= totalBeats; beat += 4) {
-            const x = beat * beatWidth;
+        for (let b = 0; b <= totalBeats; b += 4) {
+            const x = b * beatWidth;
             ctx.beginPath();
             ctx.moveTo(x, 0);
             ctx.lineTo(x, height);
@@ -160,8 +194,8 @@ export function FullPianoRoll({
         }
 
         // 再生位置インジケーター
-        if (currentBeat !== null) {
-            const x = currentBeat * beatWidth;
+        if (beat !== null) {
+            const x = beat * beatWidth;
             ctx.strokeStyle = '#f97316';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -169,8 +203,21 @@ export function FullPianoRoll({
             ctx.lineTo(x, height);
             ctx.stroke();
         }
+    }, []); // Empty dependency array as it reads from refs
 
-    }, [chords, bassNotes, chordsMuted, bassMuted, totalBeats, currentBeat, minNote, maxNote]);
+    // Trigger redraw when data changes
+    useEffect(() => {
+        drawCanvas(currentBeatRef.current);
+    }, [chords, bassNotes, chordsMuted, bassMuted, totalBeats, minNote, maxNote, drawCanvas]);
+
+    // Cleanup animation frame on unmount
+    useEffect(() => {
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, []);
 
     // 再生ハンドラ
     const handlePlay = () => {
@@ -178,29 +225,46 @@ export function FullPianoRoll({
             // 停止
             stopRefs.current.chord?.();
             stopRefs.current.bass?.();
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
             setIsPlaying(false);
-            setCurrentBeat(null);
+            currentBeatRef.current = null;
+            drawCanvas(null);
         } else {
             // 再生
             setIsPlaying(true);
-            setCurrentBeat(0);
+            currentBeatRef.current = 0;
+            // Immediate draw
+            drawCanvas(0);
 
             // 再生位置更新用
             const startTime = performance.now();
             const msPerBeat = 60000 / tempo;
 
+            // Use local variable for loop to avoid closure capture issues,
+            // but read strict data from dataRef inside loop logic via drawCanvas
+
             const updatePlayhead = () => {
                 const elapsed = performance.now() - startTime;
                 const beat = elapsed / msPerBeat;
-                if (beat < totalBeats) {
-                    setCurrentBeat(beat);
-                    requestAnimationFrame(updatePlayhead);
+
+                // Read latest totalBeats from ref to support dynamic updates if needed
+                const currentTotalBeats = dataRef.current.totalBeats;
+
+                if (beat < currentTotalBeats) {
+                    currentBeatRef.current = beat;
+                    drawCanvas(beat);
+                    animationFrameRef.current = requestAnimationFrame(updatePlayhead);
                 } else {
                     setIsPlaying(false);
-                    setCurrentBeat(null);
+                    currentBeatRef.current = null;
+                    drawCanvas(null);
+                    animationFrameRef.current = null;
                 }
             };
-            requestAnimationFrame(updatePlayhead);
+            animationFrameRef.current = requestAnimationFrame(updatePlayhead);
 
             // コード再生
             if (!chordsMuted && chords.length > 0) {
