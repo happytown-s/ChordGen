@@ -21,6 +21,7 @@ function App() {
     updateChordDuration,
     getBorrowableChordsForKey,
     applySpecificBorrowedChord,
+    extendProgression,
   } = useChordProgression();
 
   // Drag state for chord swapping
@@ -79,6 +80,7 @@ function App() {
             onDurationChange={updateChordDuration}
             getBorrowableChords={getBorrowableChordsForKey}
             onApplySpecificBorrowedChord={applySpecificBorrowedChord}
+            onExtendProgression={extendProgression}
           />
         )}
 
@@ -103,6 +105,7 @@ function App() {
               onDurationChange={updateChordDuration}
               getBorrowableChords={getBorrowableChordsForKey}
               onApplySpecificBorrowedChord={applySpecificBorrowedChord}
+              onExtendProgression={extendProgression}
             />
           ))}
         </div>

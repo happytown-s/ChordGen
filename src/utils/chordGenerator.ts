@@ -808,3 +808,87 @@ export function generateModalInterchangeChord(
   };
 }
 
+// 進行を拡張するコードを生成（4ブロック追加）
+// Generate extension chords (add 4 more blocks with different progression)
+export function generateExtensionChords(
+  existingChords: Chord[],
+  key: Key,
+  genre?: Genre,
+  mood?: Mood
+): Chord[] {
+  // 既存のコード数を確認（最大8ブロックまで）
+  if (existingChords.length >= 8) {
+    return [];
+  }
+
+  const chordsToAdd = Math.min(4, 8 - existingChords.length);
+  const lastChord = existingChords[existingChords.length - 1];
+
+  // 展開用のプログレッションテンプレート
+  // 最初の4ブロックとは違う流れを作るため、よく使われる展開パターン
+  const EXTENSION_TEMPLATES: ProgressionTemplate[] = [
+    // サブドミナントからの展開
+    [[4, 'maj7'], [5, '7'], [3, 'min7'], [6, 'min7']],
+    // リハーモナイズされた展開
+    [[2, 'min7'], [5, '9'], [1, 'maj9'], [4, 'maj7']],
+    // 転調を示唆する展開
+    [[6, 'min7'], [2, 'min7'], [5, '7'], [1, 'maj7']],
+    // ドラマチックな展開
+    [[4, 'maj7'], [4, 'min7'], [1, 'maj7'], [5, '7']],
+    // サスペンス→解決
+    [[5, 'sus4'], [5, '7'], [1, 'maj7'], [6, 'min7']],
+  ];
+
+  // ジャンルに応じたテンプレートを選択
+  let template: ProgressionTemplate;
+
+  // ジャンル+ムードのキーでテンプレートを探す
+  const templateKey = `${genre || 'Pop'}_${mood || 'Chill'}`;
+  const genreTemplates = PROGRESSION_TEMPLATES[templateKey];
+
+  if (genreTemplates && genreTemplates.length > 0) {
+    // 既存のテンプレートと被らないようにランダム選択
+    template = genreTemplates[Math.floor(Math.random() * genreTemplates.length)];
+  } else {
+    // デフォルトの展開テンプレート
+    template = EXTENSION_TEMPLATES[Math.floor(Math.random() * EXTENSION_TEMPLATES.length)];
+  }
+
+  // オープンボイシングを使用するジャンル
+  const openVoicingGenres: Genre[] = ['Jazz', 'Neo Soul', 'Lo-Fi'];
+  const useOpenVoicing = Boolean(genre && openVoicingGenres.includes(genre));
+
+  const newChords: Chord[] = [];
+  let prevNotes = lastChord?.notes || null;
+
+  for (let i = 0; i < chordsToAdd; i++) {
+    const [degree, quality] = template[i % template.length];
+    // adjustForMinorKey(degree, quality, key) の正しい呼び出し
+    const [adjustedDegree, adjustedQuality] = adjustForMinorKey(degree, quality, key);
+    const root = getScaleDegreeNote(key, adjustedDegree);
+    let finalQuality = adjustedQuality;
+
+    // ジャンルに応じてクオリティを調整
+    // enrichChord(quality, genre) の正しい呼び出し
+    if (genre) {
+      const enriched = enrichChord(finalQuality, genre);
+      finalQuality = enriched;
+    }
+
+    const notes = getVoicedChordNotes(root, finalQuality, prevNotes, undefined, useOpenVoicing);
+
+    const chord: Chord = {
+      id: generateId(),
+      root,
+      quality: finalQuality,
+      notes,
+      displayName: getChordDisplayName(root, finalQuality),
+      durationBeats: lastChord?.durationBeats || 4,
+    };
+
+    newChords.push(chord);
+    prevNotes = notes;
+  }
+
+  return newChords;
+}

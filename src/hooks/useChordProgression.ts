@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useEffect } from 'react';
 import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression, Chord, NoteName, ChordQuality } from '../types';
-import { generateProgressions, regenerateProgression, generatePassingChord, generateSingleChord, generateModalInterchangeChord } from '../utils/chordGenerator';
+import { generateProgressions, regenerateProgression, generatePassingChord, generateSingleChord, generateModalInterchangeChord, generateExtensionChords } from '../utils/chordGenerator';
 import { getBorrowableChords, getChordDisplayName, getVoicedChordNotes } from '../utils/musicTheory';
 
 const initialState: AppState = {
@@ -286,6 +286,31 @@ function reducer(state: AppState, action: AppAction): AppState {
         bridgeProgressions: newBridges,
       };
     }
+    case 'EXTEND_PROGRESSION': {
+      const { progressionId, newChords } = action.payload;
+
+      // メイン進行の更新
+      if (state.mainProgression.id === progressionId) {
+        const updatedChords = [...state.mainProgression.chords, ...newChords];
+        return {
+          ...state,
+          mainProgression: { ...state.mainProgression, chords: updatedChords },
+        };
+      }
+
+      // ブリッジ進行の更新
+      const newBridges = state.bridgeProgressions.map(p => {
+        if (p.id === progressionId) {
+          const updatedChords = [...p.chords, ...newChords];
+          return { ...p, chords: updatedChords };
+        }
+        return p;
+      });
+      return {
+        ...state,
+        bridgeProgressions: newBridges,
+      };
+    }
     default:
       return state;
   }
@@ -472,6 +497,29 @@ export function useChordProgression() {
     });
   }, [state.settings, state.mainProgression, state.bridgeProgressions]);
 
+  // Extend progression (add 4 more chords with different pattern)
+  // 進行を拡張（最大8ブロックまで、異なる展開パターンで）
+  const extendProgression = useCallback((progressionId: string) => {
+    const { key, genre, mood } = state.settings;
+
+    // Find the progression
+    const prog = state.mainProgression.id === progressionId
+      ? state.mainProgression
+      : state.bridgeProgressions.find(p => p.id === progressionId);
+
+    if (!prog || prog.chords.length >= 8) return;
+
+    // Generate extension chords
+    const newChords = generateExtensionChords(prog.chords, key, genre, mood);
+
+    if (newChords.length > 0) {
+      dispatch({
+        type: 'EXTEND_PROGRESSION',
+        payload: { progressionId, newChords },
+      });
+    }
+  }, [state.settings, state.mainProgression, state.bridgeProgressions]);
+
   // Generate initial progressions on mount
   useEffect(() => {
     generate();
@@ -494,5 +542,6 @@ export function useChordProgression() {
     applyModalInterchange,
     getBorrowableChordsForKey,
     applySpecificBorrowedChord,
+    extendProgression,
   };
 }

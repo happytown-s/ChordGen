@@ -20,6 +20,7 @@ interface ProgressionRowProps {
   onDurationChange: (progId: string, index: number, durationBeats: number) => void;
   getBorrowableChords: () => { root: NoteName; quality: ChordQuality; degree: string; borrowedFrom: 'parallel-minor' | 'parallel-major' }[];
   onApplySpecificBorrowedChord: (progId: string, index: number, root: NoteName, quality: ChordQuality, degree: string, borrowedFrom: 'parallel-minor' | 'parallel-major') => void;
+  onExtendProgression: (progId: string) => void;
 }
 
 export function ProgressionRow({
@@ -37,6 +38,7 @@ export function ProgressionRow({
   onDurationChange,
   getBorrowableChords,
   onApplySpecificBorrowedChord,
+  onExtendProgression,
 }: ProgressionRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
@@ -208,6 +210,19 @@ export function ProgressionRow({
             />
           </div>
         ))}
+        {/* ADD Button - 8ブロック未満の時のみ表示 */}
+        {progression.chords.length < 8 && (
+          <button
+            onClick={() => onExtendProgression(progression.id)}
+            className="flex flex-col items-center justify-center min-w-[80px] h-[140px] border-2 border-dashed border-slate-500 rounded-lg text-slate-400 hover:border-green-500 hover:text-green-400 hover:bg-slate-800/50 transition-colors"
+            title="進行を拡張（4ブロック追加）"
+          >
+            <svg className="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs">ADD</span>
+          </button>
+        )}
       </div>
     </div>
   );
