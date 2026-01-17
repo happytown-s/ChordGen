@@ -35,16 +35,16 @@ function createEnvelope(
   gainNode.gain.linearRampToValueAtTime(0, endTime);
 }
 
+// ADSR configuration cache
+const ADSR_CONFIG = {
+  sine: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.3 },
+  piano: { attack: 0.005, decay: 0.3, sustain: 0.4, release: 0.5 },
+  pad: { attack: 0.3, decay: 0.2, sustain: 0.8, release: 0.8 },
+};
+
 // Get ADSR values based on sound type
 function getADSR(soundType: SoundType) {
-  switch (soundType) {
-    case 'sine':
-      return { attack: 0.02, decay: 0.1, sustain: 0.7, release: 0.3 };
-    case 'piano':
-      return { attack: 0.005, decay: 0.3, sustain: 0.4, release: 0.5 };
-    case 'pad':
-      return { attack: 0.3, decay: 0.2, sustain: 0.8, release: 0.8 };
-  }
+  return ADSR_CONFIG[soundType];
 }
 
 // Create oscillator for a single note (sine wave)
@@ -82,6 +82,8 @@ function createPianoSound(
   const harmonics = [1, 2, 3, 4, 5, 6];
   const amplitudes = [1, 0.5, 0.25, 0.125, 0.06, 0.03];
 
+  const adsr = getADSR('piano');
+
   harmonics.forEach((harmonic, i) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -94,7 +96,7 @@ function createPianoSound(
 
     // Scale amplitude by harmonic weight
     const baseGain = 0.15 * amplitudes[i];
-    const { attack, decay, sustain, release } = getADSR('piano');
+    const { attack, decay, sustain, release } = adsr;
     const endTime = startTime + duration;
 
     gain.gain.setValueAtTime(0, startTime);
