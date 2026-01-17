@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useEffect } from 'react';
-import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression, Chord, NoteName, ChordQuality, BorrowedFrom } from '../types';
+import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression, Chord, NoteName, ChordQuality } from '../types';
 import { generateProgressions, regenerateProgression, generatePassingChord, generateSingleChord, generateModalInterchangeChord } from '../utils/chordGenerator';
 import { getBorrowableChords, getChordDisplayName, getVoicedChordNotes } from '../utils/musicTheory';
 

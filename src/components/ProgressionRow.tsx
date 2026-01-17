@@ -18,7 +18,6 @@ interface ProgressionRowProps {
   onInsertChord: (progId: string, insertIndex: number) => void;
   onRegenerateChord: (progId: string, index: number) => void;
   onDurationChange: (progId: string, index: number, durationBeats: number) => void;
-  onApplyModalInterchange: (progId: string, index: number) => void;
   getBorrowableChords: () => { root: NoteName; quality: ChordQuality; degree: string; borrowedFrom: 'parallel-minor' | 'parallel-major' }[];
   onApplySpecificBorrowedChord: (progId: string, index: number, root: NoteName, quality: ChordQuality, degree: string, borrowedFrom: 'parallel-minor' | 'parallel-major') => void;
 }
@@ -36,7 +35,6 @@ export function ProgressionRow({
   onInsertChord,
   onRegenerateChord,
   onDurationChange,
-  onApplyModalInterchange,
   getBorrowableChords,
   onApplySpecificBorrowedChord,
 }: ProgressionRowProps) {
@@ -205,7 +203,6 @@ export function ProgressionRow({
               onDrop={onDrop}
               onRegenerate={onRegenerateChord}
               onDurationChange={onDurationChange}
-              onApplyModalInterchange={onApplyModalInterchange}
               getBorrowableChords={getBorrowableChords}
               onApplySpecificBorrowedChord={onApplySpecificBorrowedChord}
             />

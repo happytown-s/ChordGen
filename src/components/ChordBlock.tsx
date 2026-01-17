@@ -18,7 +18,6 @@ interface ChordBlockProps {
   onDrop: (progId: string, index: number) => void;
   onRegenerate: (progId: string, index: number) => void;
   onDurationChange: (progId: string, index: number, durationBeats: number) => void;
-  onApplyModalInterchange: (progId: string, index: number) => void;
   getBorrowableChords: () => { root: NoteName; quality: ChordQuality; degree: string; borrowedFrom: 'parallel-minor' | 'parallel-major' }[];
   onApplySpecificBorrowedChord: (progId: string, index: number, root: NoteName, quality: ChordQuality, degree: string, borrowedFrom: 'parallel-minor' | 'parallel-major') => void;
 }
@@ -36,7 +35,6 @@ export function ChordBlock({
   onDrop,
   onRegenerate,
   onDurationChange,
-  onApplyModalInterchange,
   getBorrowableChords,
   onApplySpecificBorrowedChord,
 }: ChordBlockProps) {
