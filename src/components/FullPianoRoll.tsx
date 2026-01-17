@@ -275,18 +275,18 @@ export function FullPianoRoll({
             </div>
 
             {/* ピアノロール（鍵盤 + キャンバス） */}
-            <div className="flex rounded border border-slate-700 overflow-hidden">
+            <div className="flex rounded border border-slate-700 overflow-hidden" style={{ height: '200px' }}>
                 {/* SVG鍵盤 */}
                 <VerticalKeyboard
                     minNote={minNote}
                     maxNote={maxNote}
-                    height={150}
+                    height={200}
                 />
                 {/* キャンバス */}
                 <canvas
                     ref={canvasRef}
                     width={555}
-                    height={150}
+                    height={200}
                     className="flex-1"
                 />
             </div>
