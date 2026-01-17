@@ -107,13 +107,14 @@ export function FullPianoRoll({
                 ctx.stroke();
             }
 
-            // オクターブラベル（Cのみ）
+            // オクターブラベル（Cのみ）- フォントサイズを鍵盤高さに合わせる
             if (isC) {
                 const octave = Math.floor(note / 12) - 1;
-                ctx.font = 'bold 10px sans-serif';
+                const fontSize = Math.min(Math.max(noteHeight - 2, 6), 12);
+                ctx.font = `bold ${fontSize}px sans-serif`;
                 ctx.fillStyle = '#475569';
                 ctx.textAlign = 'left';
-                ctx.fillText(`C${octave}`, 3, y + noteHeight - 2);
+                ctx.fillText(`C${octave}`, 2, y + noteHeight - Math.max(1, (noteHeight - fontSize) / 2));
             }
 
             // ピアノロール部分の背景
