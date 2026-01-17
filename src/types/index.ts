@@ -88,5 +88,6 @@ export type AppAction =
   | { type: 'UPDATE_CHORD_DURATION'; payload: { progressionId: string; chordIndex: number; durationBeats: number } }
   | { type: 'APPLY_MODAL_INTERCHANGE'; payload: { progressionId: string; chordIndex: number; newChord: Chord } }
   | { type: 'APPLY_SPECIFIC_BORROWED_CHORD'; payload: { progressionId: string; chordIndex: number; newChord: Chord } }
-  | { type: 'EXTEND_PROGRESSION'; payload: { progressionId: string; newChords: Chord[] } };
+  | { type: 'EXTEND_PROGRESSION'; payload: { progressionId: string; newChords: Chord[] } }
+  | { type: 'SHIFT_CHORD_DEGREE'; payload: { progressionId: string; chordIndex: number; newChord: Chord } };
 

@@ -334,3 +334,51 @@ export function getRandomBorrowableChord(key: Key): { root: NoteName; quality: C
   return borrowableChords[Math.floor(Math.random() * borrowableChords.length)];
 }
 
+// ダイアトニックコードのクオリティマップ（メジャー/マイナースケール）
+// 度数 1-7 に対応するデフォルトのコードクオリティ
+const DIATONIC_QUALITIES_MAJOR: ChordQuality[] = ['maj7', 'min7', 'min7', 'maj7', '7', 'min7', 'm7b5'];
+const DIATONIC_QUALITIES_MINOR: ChordQuality[] = ['min7', 'm7b5', 'maj7', 'min7', 'min7', 'maj7', '7'];
+
+// 度数をシフトした新しいダイアトニックコードを取得
+// direction: 1 = 上へ, -1 = 下へ
+export function getShiftedDegreeChord(
+  key: Key,
+  currentRoot: NoteName,
+  direction: 1 | -1
+): { root: NoteName; quality: ChordQuality; degree: number } {
+  const scaleNotes = getScaleNotes(key);
+
+  // 現在のルート音がスケール上の何度かを特定
+  let currentDegreeIndex = scaleNotes.findIndex(note => note === currentRoot);
+
+  // スケール外の場合は最も近い度数を探す
+  if (currentDegreeIndex === -1) {
+    const rootMidi = NOTE_TO_MIDI[currentRoot];
+    let minDistance = Infinity;
+    scaleNotes.forEach((note, idx) => {
+      const noteMidi = NOTE_TO_MIDI[note];
+      const distance = Math.abs((rootMidi - noteMidi + 12) % 12);
+      if (distance < minDistance) {
+        minDistance = distance;
+        currentDegreeIndex = idx;
+      }
+    });
+  }
+
+  // 度数をシフト（0-6の範囲でラップ）
+  let newDegreeIndex = (currentDegreeIndex + direction + 7) % 7;
+
+  // 新しいルート音
+  const newRoot = scaleNotes[newDegreeIndex];
+
+  // ダイアトニッククオリティを取得
+  const qualities = key.scale === 'major' ? DIATONIC_QUALITIES_MAJOR : DIATONIC_QUALITIES_MINOR;
+  const newQuality = qualities[newDegreeIndex];
+
+  return {
+    root: newRoot,
+    quality: newQuality,
+    degree: newDegreeIndex + 1, // 1-indexed
+  };
+}
+

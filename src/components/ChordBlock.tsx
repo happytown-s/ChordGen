@@ -20,6 +20,7 @@ interface ChordBlockProps {
   onDurationChange: (progId: string, index: number, durationBeats: number) => void;
   getBorrowableChords: () => { root: NoteName; quality: ChordQuality; degree: string; borrowedFrom: 'parallel-minor' | 'parallel-major' }[];
   onApplySpecificBorrowedChord: (progId: string, index: number, root: NoteName, quality: ChordQuality, degree: string, borrowedFrom: 'parallel-minor' | 'parallel-major') => void;
+  onShiftChordDegree: (progId: string, index: number, direction: 1 | -1) => void;
 }
 
 export function ChordBlock({
@@ -37,6 +38,7 @@ export function ChordBlock({
   onDurationChange,
   getBorrowableChords,
   onApplySpecificBorrowedChord,
+  onShiftChordDegree,
 }: ChordBlockProps) {
   const dragRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -149,7 +151,24 @@ export function ChordBlock({
     >
       {/* Chord Name & Duration */}
       <div className="text-center mb-3">
-        <span className="text-2xl font-bold text-white">{chord.displayName}</span>
+        {/* 度数シフトボタン + コード名 */}
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => onShiftChordDegree(progressionId, index, -1)}
+            className="w-6 h-6 flex items-center justify-center rounded bg-slate-600 hover:bg-blue-500 text-white text-sm transition-colors"
+            title="スケール度数を下げる"
+          >
+            ▼
+          </button>
+          <span className="text-2xl font-bold text-white">{chord.displayName}</span>
+          <button
+            onClick={() => onShiftChordDegree(progressionId, index, 1)}
+            className="w-6 h-6 flex items-center justify-center rounded bg-slate-600 hover:bg-blue-500 text-white text-sm transition-colors"
+            title="スケール度数を上げる"
+          >
+            ▲
+          </button>
+        </div>
         {/* 借用和音バッジ */}
         {isBorrowed && chord.borrowedDegree && (
           <div className="mt-1">

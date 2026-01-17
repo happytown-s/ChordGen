@@ -1,7 +1,7 @@
 import { useReducer, useCallback, useEffect } from 'react';
 import type { AppState, AppAction, Key, Genre, Mood, SoundType, ChordProgression, Chord, NoteName, ChordQuality } from '../types';
 import { generateProgressions, regenerateProgression, generatePassingChord, generateSingleChord, generateModalInterchangeChord, generateExtensionChords } from '../utils/chordGenerator';
-import { getBorrowableChords, getChordDisplayName, getVoicedChordNotes } from '../utils/musicTheory';
+import { getBorrowableChords, getChordDisplayName, getVoicedChordNotes, getShiftedDegreeChord } from '../utils/musicTheory';
 
 const initialState: AppState = {
   settings: {
@@ -311,6 +311,33 @@ function reducer(state: AppState, action: AppAction): AppState {
         bridgeProgressions: newBridges,
       };
     }
+    case 'SHIFT_CHORD_DEGREE': {
+      const { progressionId, chordIndex, newChord } = action.payload;
+
+      // メイン進行の更新
+      if (state.mainProgression.id === progressionId) {
+        const updatedChords = [...state.mainProgression.chords];
+        updatedChords[chordIndex] = newChord;
+        return {
+          ...state,
+          mainProgression: { ...state.mainProgression, chords: updatedChords },
+        };
+      }
+
+      // ブリッジ進行の更新
+      const newBridges = state.bridgeProgressions.map(p => {
+        if (p.id === progressionId) {
+          const updatedChords = [...p.chords];
+          updatedChords[chordIndex] = newChord;
+          return { ...p, chords: updatedChords };
+        }
+        return p;
+      });
+      return {
+        ...state,
+        bridgeProgressions: newBridges,
+      };
+    }
     default:
       return state;
   }
@@ -520,6 +547,55 @@ export function useChordProgression() {
     }
   }, [state.settings, state.mainProgression, state.bridgeProgressions]);
 
+  // Shift chord degree up or down
+  // コードのスケール度数を上下にシフト
+  const shiftChordDegree = useCallback((
+    progressionId: string,
+    chordIndex: number,
+    direction: 1 | -1 // 1 = up, -1 = down
+  ) => {
+    const { key } = state.settings;
+
+    // Find the progression and chord
+    const prog = state.mainProgression.id === progressionId
+      ? state.mainProgression
+      : state.bridgeProgressions.find(p => p.id === progressionId);
+
+    if (!prog || !prog.chords[chordIndex]) return;
+
+    const oldChord = prog.chords[chordIndex];
+    const prevChord = chordIndex > 0 ? prog.chords[chordIndex - 1] : null;
+
+    // Get shifted chord info
+    const shifted = getShiftedDegreeChord(key, oldChord.root, direction);
+
+    // Generate voiced notes
+    const notes = getVoicedChordNotes(
+      shifted.root,
+      shifted.quality,
+      prevChord?.notes || null,
+      undefined,
+      false
+    );
+
+    const newChord: Chord = {
+      id: Math.random().toString(36).substring(2, 9),
+      root: shifted.root,
+      quality: shifted.quality,
+      notes,
+      displayName: getChordDisplayName(shifted.root, shifted.quality),
+      durationBeats: oldChord.durationBeats,
+      // 度数シフト後は借用コードではなくなる
+      borrowedFrom: undefined,
+      borrowedDegree: undefined,
+    };
+
+    dispatch({
+      type: 'SHIFT_CHORD_DEGREE',
+      payload: { progressionId, chordIndex, newChord },
+    });
+  }, [state.settings, state.mainProgression, state.bridgeProgressions]);
+
   // Generate initial progressions on mount
   useEffect(() => {
     generate();
@@ -543,5 +619,6 @@ export function useChordProgression() {
     getBorrowableChordsForKey,
     applySpecificBorrowedChord,
     extendProgression,
+    shiftChordDegree,
   };
 }

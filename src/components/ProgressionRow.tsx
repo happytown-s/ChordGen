@@ -21,6 +21,7 @@ interface ProgressionRowProps {
   getBorrowableChords: () => { root: NoteName; quality: ChordQuality; degree: string; borrowedFrom: 'parallel-minor' | 'parallel-major' }[];
   onApplySpecificBorrowedChord: (progId: string, index: number, root: NoteName, quality: ChordQuality, degree: string, borrowedFrom: 'parallel-minor' | 'parallel-major') => void;
   onExtendProgression: (progId: string) => void;
+  onShiftChordDegree: (progId: string, index: number, direction: 1 | -1) => void;
 }
 
 export function ProgressionRow({
@@ -39,6 +40,7 @@ export function ProgressionRow({
   getBorrowableChords,
   onApplySpecificBorrowedChord,
   onExtendProgression,
+  onShiftChordDegree,
 }: ProgressionRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
@@ -207,6 +209,7 @@ export function ProgressionRow({
               onDurationChange={onDurationChange}
               getBorrowableChords={getBorrowableChords}
               onApplySpecificBorrowedChord={onApplySpecificBorrowedChord}
+              onShiftChordDegree={onShiftChordDegree}
             />
           </div>
         ))}
