@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import type { ChordProgression, Key, SoundType, NoteName, ChordQuality, BasslinePattern } from '../types';
 import { ChordBlock } from './ChordBlock';
 import { InsertButton } from './InsertButton';
-import { BasslinePreview } from './BasslinePreview';
+import { FullPianoRoll } from './FullPianoRoll';
 import { exportProgressionToMidi, getProgressionFilename, downloadMidi, isElectron, createMidiFileForDrag } from '../utils/midiExport';
 import { playProgression } from '../utils/audioEngine';
 
@@ -49,6 +49,8 @@ export function ProgressionRow({
   const stopRef = useRef<(() => void) | null>(null);
   const [midiFilePath, setMidiFilePath] = useState<string | null>(null);
   const [basslinePattern, setBasslinePattern] = useState<BasslinePattern>('none');
+  const [chordsMuted, setChordsMuted] = useState(false);
+  const [bassMuted, setBassMuted] = useState(false);
 
   // Pre-create MIDI file for native drag in Electron
   useEffect(() => {
@@ -85,7 +87,13 @@ export function ProgressionRow({
   }, [isPlaying, progression, tempo, soundType]);
 
   const handleDownloadAll = () => {
-    const midiBlob = exportProgressionToMidi(progression, tempo, basslinePattern);
+    // ミュート状態に応じてMIDI出力を調整
+    const effectiveBassPattern = bassMuted ? 'none' : basslinePattern;
+    const midiBlob = exportProgressionToMidi(
+      chordsMuted ? { ...progression, chords: [] } : progression,
+      tempo,
+      effectiveBassPattern as BasslinePattern
+    );
     const filename = getProgressionFilename(progression);
     downloadMidi(midiBlob, filename);
   };
@@ -245,11 +253,16 @@ export function ProgressionRow({
         )}
       </div>
 
-      {/* Bassline Preview Panel */}
-      <BasslinePreview
+      {/* Full Piano Roll Panel */}
+      <FullPianoRoll
         chords={progression.chords}
+        basslinePattern={basslinePattern}
         tempo={tempo}
-        pattern={basslinePattern}
+        soundType={soundType}
+        onMuteChange={(cm, bm) => {
+          setChordsMuted(cm);
+          setBassMuted(bm);
+        }}
       />
     </div>
   );
