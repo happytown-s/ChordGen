@@ -28,8 +28,11 @@ export function VerticalKeyboard({ minNote, maxNote, height }: VerticalKeyboardP
     const blackKeys: { note: number; y: number }[] = [];
 
     for (let note = minNote; note <= maxNote; note++) {
+        // Y座標は均等割り（譜面と合わせるため）
         const y = height - ((note - minNote + 1) * noteHeight);
+
         if (isBlackKey(note)) {
+            // 黒鍵は中央に配置されるので位置はそのままでOK
             blackKeys.push({ note, y });
         } else {
             whiteKeys.push({ note, y });
@@ -43,13 +46,33 @@ export function VerticalKeyboard({ minNote, maxNote, height }: VerticalKeyboardP
                 const isC = note % 12 === 0;
                 const octave = Math.floor(note / 12) - 1;
 
+                // 白鍵の描画範囲を拡張して、隣接する黒鍵の食い込みを表現する
+                let topY = y;          // 上端（音が高い方、SVG座標は小さい）
+                let bottomY = y + noteHeight; // 下端（音が低い方、SVG座標は大きい）
+
+                // 1. 上（音が高い方）が黒鍵なら、その半分まで伸ばす
+                const nextNote = note + 1;
+                if (nextNote <= maxNote && isBlackKey(nextNote)) {
+                    topY -= (noteHeight / 2);
+                }
+
+                // 2. 下（音が低い方）が黒鍵なら、その半分まで伸ばす
+                const prevNote = note - 1;
+                if (prevNote >= minNote && isBlackKey(prevNote)) {
+                    bottomY += (noteHeight / 2);
+                }
+
+                // 補正後の矩形
+                const rectY = topY;
+                const rectHeight = bottomY - topY;
+
                 return (
                     <g key={note}>
                         <rect
                             x={0}
-                            y={y}
+                            y={rectY}
                             width={keyboardWidth - 1}
-                            height={noteHeight}
+                            height={rectHeight}
                             fill="#f1f5f9"
                             stroke="#94a3b8"
                             strokeWidth={0.5}
@@ -57,7 +80,7 @@ export function VerticalKeyboard({ minNote, maxNote, height }: VerticalKeyboardP
                         {isC && noteHeight >= 8 && (
                             <text
                                 x={3}
-                                y={y + noteHeight - 2}
+                                y={y + noteHeight - 2} // ラベル位置は元のマスの下寄せ
                                 fontSize={Math.min(noteHeight - 2, 10)}
                                 fill="#475569"
                                 fontWeight="bold"
@@ -74,9 +97,9 @@ export function VerticalKeyboard({ minNote, maxNote, height }: VerticalKeyboardP
                 <rect
                     key={note}
                     x={0}
-                    y={y}
+                    y={y} // 黒鍵は行の中に収まる（または少し細くする？）
                     width={blackKeyLength}
-                    height={noteHeight}
+                    height={noteHeight} // 黒鍵の高さは1行分
                     fill="#1e293b"
                     stroke="#0f172a"
                     strokeWidth={0.5}
