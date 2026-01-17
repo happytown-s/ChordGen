@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import type { ChordProgression, Key, SoundType, NoteName, ChordQuality, BasslinePattern } from '../types';
 import { ChordBlock } from './ChordBlock';
 import { InsertButton } from './InsertButton';
+import { BasslinePreview } from './BasslinePreview';
 import { exportProgressionToMidi, getProgressionFilename, downloadMidi, isElectron, createMidiFileForDrag } from '../utils/midiExport';
 import { playProgression } from '../utils/audioEngine';
 
@@ -243,6 +244,13 @@ export function ProgressionRow({
           </button>
         )}
       </div>
+
+      {/* Bassline Preview Panel */}
+      <BasslinePreview
+        chords={progression.chords}
+        tempo={tempo}
+        pattern={basslinePattern}
+      />
     </div>
   );
 }

@@ -243,3 +243,108 @@ export function resumeAudio(): Promise<void> {
   const ctx = getAudioContext();
   return ctx.resume();
 }
+
+// ベースサウンド生成（低音用）
+function createBassSound(
+  ctx: AudioContext,
+  frequency: number,
+  startTime: number,
+  duration: number,
+  destination: AudioNode,
+  velocity: number = 90
+) {
+  // Sub bass (sine) + harmonics for punchy bass
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  // Sub bass (fundamental)
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(frequency, startTime);
+
+  // Upper harmonics (triangle for warmth)
+  osc2.type = 'triangle';
+  osc2.frequency.setValueAtTime(frequency * 2, startTime);
+
+  // Low-pass filter
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(800, startTime);
+  filter.Q.setValueAtTime(2, startTime);
+
+  const gainNode1 = ctx.createGain();
+  const gainNode2 = ctx.createGain();
+
+  // Velocity scaling
+  const velScale = velocity / 127;
+  gainNode1.gain.setValueAtTime(0.4 * velScale, startTime);
+  gainNode2.gain.setValueAtTime(0.15 * velScale, startTime);
+
+  osc1.connect(gainNode1);
+  osc2.connect(gainNode2);
+  gainNode1.connect(filter);
+  gainNode2.connect(filter);
+  filter.connect(gain);
+  gain.connect(destination);
+
+  // Punchy envelope
+  const attack = 0.01;
+  const decay = 0.1;
+  const sustain = 0.6;
+  const release = 0.15;
+  const endTime = startTime + duration;
+
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(0.5 * velScale, startTime + attack);
+  gain.gain.linearRampToValueAtTime(sustain * 0.5 * velScale, startTime + attack + decay);
+  gain.gain.setValueAtTime(sustain * 0.5 * velScale, endTime - release);
+  gain.gain.linearRampToValueAtTime(0, endTime);
+
+  osc1.start(startTime);
+  osc1.stop(endTime + 0.1);
+  osc2.start(startTime);
+  osc2.stop(endTime + 0.1);
+}
+
+// ベースラインを再生
+import type { BassNote } from './basslineGenerator';
+
+export function playBassline(
+  bassNotes: BassNote[],
+  tempo: number,
+  onNotePlay?: (index: number) => void
+): { stop: () => void } {
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') {
+    ctx.resume();
+  }
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(0.7, ctx.currentTime);
+  masterGain.connect(ctx.destination);
+
+  const baseTime = ctx.currentTime;
+  const timeouts: number[] = [];
+
+  bassNotes.forEach((note, index) => {
+    const startTime = baseTime + (note.startBeat * 60) / tempo;
+    const duration = (note.durationBeats * 60) / tempo;
+    const frequency = 440 * Math.pow(2, (note.midiNote - 69) / 12);
+
+    // Schedule callback for visual feedback
+    const delay = (startTime - ctx.currentTime) * 1000;
+    if (onNotePlay) {
+      const timeout = window.setTimeout(() => onNotePlay(index), delay);
+      timeouts.push(timeout);
+    }
+
+    createBassSound(ctx, frequency, startTime, duration, masterGain, note.velocity);
+  });
+
+  return {
+    stop: () => {
+      timeouts.forEach(clearTimeout);
+      masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+    },
+  };
+}
