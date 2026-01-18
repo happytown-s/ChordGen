@@ -51,6 +51,7 @@ export function ProgressionRow({
   const [midiFilePath, setMidiFilePath] = useState<string | null>(null);
   const [basslinePattern, setBasslinePattern] = useState<BasslinePattern>('none');
   const [chordPattern, setChordPattern] = useState<ChordPattern>('sustain');
+  const [strumAmount, setStrumAmount] = useState(50); // -100〜100、負=ダウン、正=アップ
   const [chordsMuted, setChordsMuted] = useState(false);
   const [bassMuted, setBassMuted] = useState(false);
 
@@ -78,7 +79,7 @@ export function ProgressionRow({
 
     // コード再生（ミュート時はスキップ）
     if (!chordsMuted && progression.chords.length > 0) {
-      const { stop } = playProgressionWithPattern(progression, tempo, soundType, chordPattern, (index) => {
+      const { stop } = playProgressionWithPattern(progression, tempo, soundType, chordPattern, strumAmount, (index) => {
         setPlayingIndex(index);
         // Reset after last chord
         if (index === progression.chords.length - 1) {
@@ -112,17 +113,19 @@ export function ProgressionRow({
         stopRef.current = {};
       }, totalDuration * 1000);
     }
-  }, [isPlaying, progression, tempo, soundType, basslinePattern, chordPattern, chordsMuted, bassMuted]);
+  }, [isPlaying, progression, tempo, soundType, basslinePattern, chordPattern, strumAmount, chordsMuted, bassMuted]);
 
   const handleDownloadAll = () => {
     // ミュート状態に応じてMIDI出力を調整
     const effectiveBassPattern = bassMuted ? 'none' : basslinePattern;
     const effectiveChordPattern = chordsMuted ? 'sustain' : chordPattern; // ミュート時はデフォルト
+    const effectiveStrumAmount = chordsMuted ? 50 : strumAmount;
     const midiBlob = exportProgressionToMidi(
       chordsMuted ? { ...progression, chords: [] } : progression,
       tempo,
       effectiveBassPattern as BasslinePattern,
-      effectiveChordPattern
+      effectiveChordPattern,
+      effectiveStrumAmount
     );
     const filename = getProgressionFilename(progression);
     downloadMidi(midiBlob, filename);
@@ -237,6 +240,27 @@ export function ProgressionRow({
             <option value="staccato">Chord: スタッカート</option>
             <option value="strum">Chord: ストラム</option>
           </select>
+
+          {/* Strum Amount Slider (ストラム選択時のみ表示) */}
+          {chordPattern === 'strum' && (
+            <div className="flex items-center gap-2 px-2 py-1 rounded bg-slate-700 border border-purple-500">
+              <span className="text-xs text-slate-400 whitespace-nowrap">
+                {strumAmount < 0 ? '↓' : '↑'}
+              </span>
+              <input
+                type="range"
+                min={-100}
+                max={100}
+                value={strumAmount}
+                onChange={(e) => setStrumAmount(Number(e.target.value))}
+                className="w-20 h-2 accent-purple-500"
+                title={`ストラム: ${strumAmount}% (${strumAmount < 0 ? 'ダウン' : 'アップ'}ストローク)`}
+              />
+              <span className="text-xs text-slate-300 w-8 text-right">
+                {strumAmount}%
+              </span>
+            </div>
+          )}
 
           {/* Regenerate Button */}
           <button

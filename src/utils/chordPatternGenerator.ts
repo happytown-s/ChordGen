@@ -15,11 +15,13 @@ export interface ChordNote {
 
 /**
  * コードをパターンに応じたノートイベントに変換
+ * @param strumAmount -100〜100の値。負=ダウンストローク（高音→低音）、正=アップストローク（低音→高音）
  */
 export function generateChordWithPattern(
     chord: Chord,
     pattern: ChordPattern,
-    startBeat: number
+    startBeat: number,
+    strumAmount: number = 50 // デフォルトは50%のアップストローク
 ): ChordNote[] {
     const notes = [...chord.notes].sort((a, b) => a - b); // 低い音から順にソート
     const duration = chord.durationBeats;
@@ -34,7 +36,7 @@ export function generateChordWithPattern(
         case 'staccato':
             return generateStaccatoPattern(notes, startBeat, duration);
         case 'strum':
-            return generateStrumPattern(notes, startBeat, duration);
+            return generateStrumPattern(notes, startBeat, duration, strumAmount);
         default:
             return generateSustainPattern(notes, startBeat, duration);
     }
@@ -154,18 +156,26 @@ function generateStaccatoPattern(
 /**
  * ストラムパターン
  * ギターのストラム風（微妙なタイミングずれ）
+ * @param strumAmount -100〜100。負=ダウン（高音→低音）、正=アップ（低音→高音）
  */
 function generateStrumPattern(
     notes: number[],
     startBeat: number,
-    duration: number
+    duration: number,
+    strumAmount: number = 50
 ): ChordNote[] {
     const result: ChordNote[] = [];
-    // ストラムの「ずれ」時間（32分音符程度）
-    const strumDelay = 0.03;
 
-    notes.forEach((midiNote, index) => {
-        const offset = strumDelay * index;
+    // strumAmountの絶対値がタイミングの幅を決める
+    // 100% = 0.06拍（50% = 0.03拍）
+    const maxDelay = 0.06;
+    const delayPerNote = (Math.abs(strumAmount) / 100) * maxDelay;
+
+    // 負の値はダウンストローク（高音から低音へ）
+    const orderedNotes = strumAmount < 0 ? [...notes].reverse() : notes;
+
+    orderedNotes.forEach((midiNote, index) => {
+        const offset = delayPerNote * index;
         result.push({
             midiNote,
             startBeat: startBeat + offset,
@@ -179,16 +189,18 @@ function generateStrumPattern(
 
 /**
  * プログレッション全体のコードパターンを生成
+ * @param strumAmount ストラムパターン用の方向と強度（-100〜100）
  */
 export function generateProgressionChordNotes(
     chords: Chord[],
-    pattern: ChordPattern
+    pattern: ChordPattern,
+    strumAmount: number = 50
 ): ChordNote[] {
     const result: ChordNote[] = [];
     let currentBeat = 0;
 
     for (const chord of chords) {
-        const chordNotes = generateChordWithPattern(chord, pattern, currentBeat);
+        const chordNotes = generateChordWithPattern(chord, pattern, currentBeat, strumAmount);
         result.push(...chordNotes);
         currentBeat += chord.durationBeats;
     }

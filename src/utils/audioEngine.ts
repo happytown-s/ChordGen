@@ -279,6 +279,7 @@ export function playProgressionWithPattern(
   tempo: number,
   soundType: SoundType = 'piano',
   chordPattern: ChordPattern = 'sustain',
+  strumAmount: number = 50,
   onChordPlay?: (index: number) => void
 ): { stop: () => void } {
   // サステインパターンの場合は既存のロジックを使用
@@ -299,7 +300,7 @@ export function playProgressionWithPattern(
   const timeouts: number[] = [];
 
   // パターンに基づいたノートを生成
-  const chordNotes = generateProgressionChordNotes(progression.chords, chordPattern);
+  const chordNotes = generateProgressionChordNotes(progression.chords, chordPattern, strumAmount);
 
   // コードごとのコールバック用（最初のノートでトリガー）
   let currentChordBeat = 0;

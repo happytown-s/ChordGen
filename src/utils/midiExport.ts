@@ -49,7 +49,8 @@ function progressionToChordTrack(progression: ChordProgression, tempo: number) {
 function progressionToChordTrackWithPattern(
   progression: ChordProgression,
   tempo: number,
-  chordPattern: ChordPattern
+  chordPattern: ChordPattern,
+  strumAmount: number = 50
 ) {
   // サステインの場合は既存ロジックを使用
   if (chordPattern === 'sustain') {
@@ -60,7 +61,7 @@ function progressionToChordTrackWithPattern(
   track.setTempo(tempo);
 
   // パターンに基づいたノートを生成
-  const chordNotes = generateProgressionChordNotes(progression.chords, chordPattern);
+  const chordNotes = generateProgressionChordNotes(progression.chords, chordPattern, strumAmount);
 
   let currentTick = 0;
 
@@ -148,12 +149,13 @@ export function exportProgressionToMidi(
   progression: ChordProgression,
   tempo: number,
   basslinePattern: BasslinePattern = 'none',
-  chordPattern: ChordPattern = 'sustain'
+  chordPattern: ChordPattern = 'sustain',
+  strumAmount: number = 50
 ): Blob {
   const tracks = [];
 
   // コードトラック（パターン対応）
-  const chordTrack = progressionToChordTrackWithPattern(progression, tempo, chordPattern);
+  const chordTrack = progressionToChordTrackWithPattern(progression, tempo, chordPattern, strumAmount);
   tracks.push(chordTrack);
 
   // ベースライントラック（パターンが指定されている場合）
