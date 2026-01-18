@@ -329,7 +329,7 @@ export function ProgressionRow({
               index={index}
               progressionId={progression.id}
               isPlaying={playingIndex === index}
-              showPianoRoll={showPianoRoll}
+              // showPianoRoll={showPianoRoll} // 以前はここで制御していたが、FullPianoRollの制御に変更するため常に表示（デフォルトtrue）とする
               onDragStart={onDragStart}
               onDragOver={onDragOver}
               onDrop={onDrop}
@@ -358,16 +358,18 @@ export function ProgressionRow({
       </div>
 
       {/* Full Piano Roll Panel */}
-      <FullPianoRoll
-        chords={progression.chords}
-        basslinePattern={basslinePattern}
-        tempo={tempo}
-        soundType={soundType}
-        onMuteChange={(cm, bm) => {
-          setChordsMuted(cm);
-          setBassMuted(bm);
-        }}
-      />
+      {showPianoRoll && (
+        <FullPianoRoll
+          chords={progression.chords}
+          basslinePattern={basslinePattern}
+          tempo={tempo}
+          soundType={soundType}
+          onMuteChange={(cm, bm) => {
+            setChordsMuted(cm);
+            setBassMuted(bm);
+          }}
+        />
+      )}
     </div>
   );
 }
