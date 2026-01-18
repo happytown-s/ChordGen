@@ -13,6 +13,7 @@ interface ChordBlockProps {
   index: number;
   progressionId: string;
   isPlaying?: boolean;
+  showPianoRoll?: boolean;
   onDragStart: (progId: string, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (progId: string, index: number) => void;
@@ -31,6 +32,7 @@ export function ChordBlock({
   index,
   progressionId,
   isPlaying = false,
+  showPianoRoll = true,
   onDragStart,
   onDragOver,
   onDrop,
@@ -199,9 +201,11 @@ export function ChordBlock({
       </div>
 
       {/* Piano Roll */}
-      <div className="flex justify-center">
-        <PianoRoll notes={chord.notes} keyValue={keyValue} width={200} height={50} />
-      </div>
+      {showPianoRoll && (
+        <div className="flex justify-center">
+          <PianoRoll notes={chord.notes} keyValue={keyValue} width={200} height={50} />
+        </div>
+      )}
 
       {/* Buttons */}
       <div className="flex items-center justify-center gap-2 mt-3">

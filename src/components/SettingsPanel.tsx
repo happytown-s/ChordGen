@@ -7,11 +7,13 @@ interface SettingsPanelProps {
   genre: Genre;
   mood: Mood;
   soundType: SoundType;
+  showPianoRoll: boolean;
   onKeyChange: (key: Key) => void;
   onTempoChange: (tempo: number) => void;
   onGenreChange: (genre: Genre) => void;
   onMoodChange: (mood: Mood) => void;
   onSoundTypeChange: (soundType: SoundType) => void;
+  onTogglePianoRoll: () => void;
   onGenerate: () => void;
 }
 
@@ -36,11 +38,13 @@ export function SettingsPanel({
   genre,
   mood,
   soundType,
+  showPianoRoll,
   onKeyChange,
   onTempoChange,
   onGenreChange,
   onMoodChange,
   onSoundTypeChange,
+  onTogglePianoRoll,
   onGenerate,
 }: SettingsPanelProps) {
   return (
@@ -139,6 +143,20 @@ export function SettingsPanel({
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
+        </div>
+
+        {/* Piano Roll Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onTogglePianoRoll}
+            className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${showPianoRoll
+              ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500'
+              : 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600'
+              }`}
+            title="ピアノロールの表示/非表示を切り替え"
+          >
+            Piano Roll
+          </button>
         </div>
 
         {/* Generate Button */}

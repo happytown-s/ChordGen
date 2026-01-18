@@ -28,6 +28,9 @@ function App() {
   // Drag state for chord swapping
   const [dragSource, setDragSource] = useState<{ progId: string; index: number } | null>(null);
 
+  // UI state
+  const [showPianoRoll, setShowPianoRoll] = useState(true);
+
   const handleDragStart = useCallback((progId: string, index: number) => {
     setDragSource({ progId, index });
   }, []);
@@ -55,11 +58,13 @@ function App() {
         genre={settings.genre}
         mood={settings.mood}
         soundType={settings.soundType}
+        showPianoRoll={showPianoRoll}
         onKeyChange={setKey}
         onTempoChange={setTempo}
         onGenreChange={setGenre}
         onMoodChange={setMood}
         onSoundTypeChange={setSoundType}
+        onTogglePianoRoll={() => setShowPianoRoll(prev => !prev)}
         onGenerate={generate}
       />
 
@@ -71,6 +76,7 @@ function App() {
             keyValue={settings.key}
             tempo={settings.tempo}
             soundType={settings.soundType}
+            showPianoRoll={showPianoRoll}
             isMain
             onRegenerate={regenerateMain}
             onDragStart={handleDragStart}
@@ -98,6 +104,7 @@ function App() {
               keyValue={settings.key}
               tempo={settings.tempo}
               soundType={settings.soundType}
+              showPianoRoll={showPianoRoll}
               onRegenerate={() => regenerateBridge(index)}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}

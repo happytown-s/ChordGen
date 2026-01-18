@@ -13,6 +13,7 @@ interface ProgressionRowProps {
   tempo: number;
   soundType: SoundType;
   isMain?: boolean;
+  showPianoRoll?: boolean;
   onRegenerate: () => void;
   onDragStart: (progId: string, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -32,6 +33,7 @@ export function ProgressionRow({
   tempo,
   soundType,
   isMain = false,
+  showPianoRoll = true,
   onRegenerate,
   onDragStart,
   onDragOver,
@@ -150,7 +152,7 @@ export function ProgressionRow({
       className={`p-4 rounded-lg ${isMain ? 'bg-slate-800/80' : 'bg-slate-800/50'}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
         <div className="flex items-center gap-3">
           <h3 className={`font-semibold ${isMain ? 'text-blue-400 text-lg' : 'text-slate-300'}`}>
             {progression.label}
@@ -160,7 +162,7 @@ export function ProgressionRow({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Play All Button */}
           <button
             onClick={handlePlayAll}
@@ -295,6 +297,7 @@ export function ProgressionRow({
               index={index}
               progressionId={progression.id}
               isPlaying={playingIndex === index}
+              showPianoRoll={showPianoRoll}
               onDragStart={onDragStart}
               onDragOver={onDragOver}
               onDrop={onDrop}
@@ -306,6 +309,7 @@ export function ProgressionRow({
             />
           </div>
         ))}
+
         {/* ADD Button - 8ブロック未満の時のみ表示 */}
         {progression.chords.length < 8 && (
           <button
