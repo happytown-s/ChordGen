@@ -273,6 +273,64 @@ export function playProgression(
   };
 }
 
+// メロディ再生（単体）
+export function playMelody(notes: import('./melodyGenerator').MelodyNote[], tempo: number): { stop: () => void } {
+  if (notes.length === 0) return { stop: () => { } };
+
+  // 全体の長さを計算し、再生終了を管理するためのタイマー
+  const ctx = getAudioContext();
+  const timeouts: number[] = [];
+  const oscs: OscillatorNode[] = [];
+
+  const now = ctx.currentTime;
+
+  notes.forEach(note => {
+    const startTime = now + (note.startBeat * 60) / tempo;
+    const duration = (note.durationBeats * 60) / tempo;
+
+    const timeoutId = window.setTimeout(() => {
+      // リードシンセっぽい音色
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.type = 'sawtooth'; // 矩形波に近い方がメロディっぽい場合もあるが、sawtoothでフィルタかけるのが無難
+      osc.frequency.setValueAtTime(440 * Math.pow(2, (note.midiNote - 69) / 12), ctx.currentTime);
+
+      // フィルターエンベロープ（少しプラック感）
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(2000, ctx.currentTime + 0.05);
+
+      // 音量エンベロープ
+      const noteVel = note.velocity / 127;
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.15 * noteVel, ctx.currentTime + 0.02); // アタック
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration); // リリース
+
+      osc.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+
+      oscs.push(osc);
+    }, (startTime - now) * 1000);
+
+    timeouts.push(timeoutId);
+  });
+
+  return {
+    stop: () => {
+      timeouts.forEach(id => clearTimeout(id));
+      oscs.forEach(osc => {
+        try { osc.stop(); } catch (e) { /* ignore */ }
+      });
+    }
+  };
+}
+
 // Play a chord progression with pattern
 export function playProgressionWithPattern(
   progression: ChordProgression,

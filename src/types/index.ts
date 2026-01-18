@@ -5,6 +5,7 @@ export type ScaleType = 'major' | 'minor';
 export type BorrowedFrom = 'parallel-minor' | 'parallel-major' | null;
 export type BasslinePattern = 'none' | 'root-only' | 'root-fifth' | 'walking' | 'syncopated' | 'octave';
 export type ChordPattern = 'sustain' | 'arpeggio-up' | 'arpeggio-down' | 'staccato' | 'strum';
+export type MelodyPattern = 'none' | 'simple' | 'smooth' | 'rhythmic';
 
 // Key definition
 export interface Key {

@@ -1,11 +1,12 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import type { ChordProgression, Key, SoundType, NoteName, ChordQuality, BasslinePattern, ChordPattern } from '../types';
+import type { ChordProgression, Key, SoundType, NoteName, ChordQuality, BasslinePattern, ChordPattern, MelodyPattern } from '../types';
 import { ChordBlock } from './ChordBlock';
 import { InsertButton } from './InsertButton';
 import { FullPianoRoll } from './FullPianoRoll';
 import { exportProgressionToMidi, getProgressionFilename, downloadMidi, isElectron, createMidiFileForDrag } from '../utils/midiExport';
-import { playProgressionWithPattern, playBassline } from '../utils/audioEngine';
+import { playProgressionWithPattern, playBassline, playMelody } from '../utils/audioEngine';
 import { generateProgressionBassline } from '../utils/basslineGenerator';
+import { generateProgressionMelody } from '../utils/melodyGenerator';
 
 interface ProgressionRowProps {
   progression: ChordProgression;
@@ -49,28 +50,32 @@ export function ProgressionRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const stopRef = useRef<{ chord?: () => void; bass?: () => void }>({});
+  const stopRef = useRef<{ chord?: () => void; bass?: () => void; melody?: () => void }>({});
   const [midiFilePath, setMidiFilePath] = useState<string | null>(null);
   const [basslinePattern, setBasslinePattern] = useState<BasslinePattern>('none');
   const [chordPattern, setChordPattern] = useState<ChordPattern>('sustain');
+  const [melodyPattern, setMelodyPattern] = useState<MelodyPattern>('none');
   const [strumAmount, setStrumAmount] = useState(50); // -100〜100、負=ダウン、正=アップ
   const [chordsMuted, setChordsMuted] = useState(false);
   const [bassMuted, setBassMuted] = useState(false);
+  // const [melodyMuted, setMelodyMuted] = useState(false); // メロディミュート機能はUIにはないが、将来用あるいはFullPianoRoll連携用に確保
+  const melodyMuted = false;
 
   // Pre-create MIDI file for native drag in Electron
   useEffect(() => {
     if (isElectron() && progression.chords.length > 0) {
-      const blob = exportProgressionToMidi(progression, tempo);
+      const blob = exportProgressionToMidi(progression, tempo, basslinePattern, chordPattern, strumAmount, melodyPattern, keyValue);
       const filename = getProgressionFilename(progression);
       createMidiFileForDrag(blob, filename).then(setMidiFilePath);
     }
-  }, [progression, tempo]);
+  }, [progression, tempo, basslinePattern, chordPattern, strumAmount, melodyPattern, keyValue]);
 
   const handlePlayAll = useCallback(() => {
     if (isPlaying) {
       // 停止
       stopRef.current.chord?.();
       stopRef.current.bass?.();
+      stopRef.current.melody?.();
       setIsPlaying(false);
       setPlayingIndex(null);
       stopRef.current = {};
@@ -96,7 +101,7 @@ export function ProgressionRow({
       stopRef.current.chord = stop;
     }
 
-    // ベースライン再生（ミュート時またはパターンがnoneの場合はスキップ）
+    // ベースライン再生
     if (!bassMuted && basslinePattern !== 'none' && progression.chords.length > 0) {
       const bassNotes = generateProgressionBassline(progression.chords, basslinePattern);
       if (bassNotes.length > 0) {
@@ -105,8 +110,18 @@ export function ProgressionRow({
       }
     }
 
-    // コードがミュートされている場合は、ベースラインの長さで再生終了を判定
-    if (chordsMuted && !bassMuted && basslinePattern !== 'none') {
+    // メロディ再生
+    if (!melodyMuted && melodyPattern !== 'none' && progression.chords.length > 0) {
+      const melodyNotes = generateProgressionMelody(progression.chords, keyValue, melodyPattern);
+      if (melodyNotes.length > 0) {
+        const { stop } = playMelody(melodyNotes, tempo);
+        stopRef.current.melody = stop;
+      }
+    }
+
+    // コードがミュートまたは無効で、他が有効な場合の終了判定
+    const isChordActive = !chordsMuted && progression.chords.length > 0;
+    if (!isChordActive && ((!bassMuted && basslinePattern !== 'none') || (!melodyMuted && melodyPattern !== 'none'))) {
       const totalBeats = progression.chords.reduce((acc, c) => acc + c.durationBeats, 0);
       const totalDuration = (totalBeats * 60) / tempo;
       setTimeout(() => {
@@ -115,19 +130,23 @@ export function ProgressionRow({
         stopRef.current = {};
       }, totalDuration * 1000);
     }
-  }, [isPlaying, progression, tempo, soundType, basslinePattern, chordPattern, strumAmount, chordsMuted, bassMuted]);
+  }, [isPlaying, progression, tempo, soundType, basslinePattern, chordPattern, strumAmount, melodyPattern, keyValue, chordsMuted, bassMuted, melodyMuted]);
 
   const handleDownloadAll = () => {
     // ミュート状態に応じてMIDI出力を調整
     const effectiveBassPattern = bassMuted ? 'none' : basslinePattern;
-    const effectiveChordPattern = chordsMuted ? 'sustain' : chordPattern; // ミュート時はデフォルト
+    const effectiveChordPattern = chordsMuted ? 'sustain' : chordPattern;
+    const effectiveMelodyPattern = melodyMuted ? 'none' : melodyPattern;
     const effectiveStrumAmount = chordsMuted ? 50 : strumAmount;
+
     const midiBlob = exportProgressionToMidi(
       chordsMuted ? { ...progression, chords: [] } : progression,
       tempo,
       effectiveBassPattern as BasslinePattern,
       effectiveChordPattern,
-      effectiveStrumAmount
+      effectiveStrumAmount,
+      effectiveMelodyPattern,
+      keyValue
     );
     const filename = getProgressionFilename(progression);
     downloadMidi(midiBlob, filename);
@@ -263,6 +282,19 @@ export function ProgressionRow({
               </span>
             </div>
           )}
+
+          {/* Melody Pattern Selector */}
+          <select
+            value={melodyPattern}
+            onChange={(e) => setMelodyPattern(e.target.value as MelodyPattern)}
+            className="px-2 py-1 rounded text-sm bg-slate-700 text-slate-200 border border-slate-600 hover:border-yellow-500 transition-colors"
+            title="メロディパターン"
+          >
+            <option value="none">Melody: なし</option>
+            <option value="simple">Melody: シンプル</option>
+            <option value="smooth">Melody: スムーズ</option>
+            <option value="rhythmic">Melody: リズム</option>
+          </select>
 
           {/* Regenerate Button */}
           <button

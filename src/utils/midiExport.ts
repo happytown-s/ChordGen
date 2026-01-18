@@ -1,7 +1,8 @@
 import MidiWriter from 'midi-writer-js';
-import type { Chord, ChordProgression, BasslinePattern, ChordPattern } from '../types';
+import type { Chord, ChordProgression, BasslinePattern, ChordPattern, MelodyPattern } from '../types';
 import { generateProgressionBassline, type BassNote } from './basslineGenerator';
 import { generateProgressionChordNotes } from './chordPatternGenerator';
+import { generateProgressionMelody } from './melodyGenerator';
 
 const { Track, NoteEvent, Writer } = MidiWriter;
 
@@ -144,13 +145,59 @@ export function exportChordToMidi(chord: Chord, tempo: number): Blob {
   return new Blob([ab], { type: mimeString });
 }
 
-// Export chord progression as MIDI blob (with optional bassline and chord pattern)
+// Convert melody to MIDI track
+function melodyToTrack(melodyNotes: import('./melodyGenerator').MelodyNote[], tempo: number) {
+  const track = new Track();
+  track.setTempo(tempo);
+
+  // 楽器指定（Lead系など）
+  // Program Change: 80 (Square Lead) or 73 (Flute) etc.
+  try {
+    // @ts-ignore - ProgramChangeEvent might be missing in types
+    track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 80 }));
+  } catch (e) {
+    console.warn('ProgramChangeEvent not supported or failed', e);
+  }
+
+  let currentTick = 0;
+
+  for (const note of melodyNotes) {
+    const noteStartTick = beatsToTicks(note.startBeat);
+
+    // 休符
+    if (noteStartTick > currentTick) {
+      const waitTicks = noteStartTick - currentTick;
+      track.addEvent(new NoteEvent({
+        pitch: [0],
+        duration: `T${waitTicks}`,
+        velocity: 0,
+        wait: `T${waitTicks}`,
+      }));
+      currentTick = noteStartTick;
+    }
+
+    // ノート
+    const noteDurationTicks = beatsToTicks(note.durationBeats);
+    track.addEvent(new NoteEvent({
+      pitch: [note.midiNote],
+      duration: `T${noteDurationTicks}`,
+      velocity: note.velocity,
+    }));
+    currentTick = noteStartTick + noteDurationTicks;
+  }
+
+  return track;
+}
+
+// Export chord progression as MIDI blob (with optional bassline, chord pattern, and melody pattern)
 export function exportProgressionToMidi(
   progression: ChordProgression,
   tempo: number,
   basslinePattern: BasslinePattern = 'none',
   chordPattern: ChordPattern = 'sustain',
-  strumAmount: number = 50
+  strumAmount: number = 50,
+  melodyPattern: MelodyPattern = 'none',
+  key?: import('../types').Key // メロディ生成にキーが必要
 ): Blob {
   const tracks = [];
 
@@ -164,6 +211,15 @@ export function exportProgressionToMidi(
     if (bassNotes.length > 0) {
       const bassTrack = basslineToTrack(bassNotes, tempo);
       tracks.push(bassTrack);
+    }
+  }
+
+  // メロディトラック（パターンが指定されている場合）
+  if (melodyPattern !== 'none' && key) {
+    const melodyNotes = generateProgressionMelody(progression.chords, key, melodyPattern);
+    if (melodyNotes.length > 0) {
+      const melodyTrack = melodyToTrack(melodyNotes, tempo);
+      tracks.push(melodyTrack);
     }
   }
 
