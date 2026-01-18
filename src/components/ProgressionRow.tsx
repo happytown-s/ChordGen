@@ -4,7 +4,8 @@ import { ChordBlock } from './ChordBlock';
 import { InsertButton } from './InsertButton';
 import { FullPianoRoll } from './FullPianoRoll';
 import { exportProgressionToMidi, getProgressionFilename, downloadMidi, isElectron, createMidiFileForDrag } from '../utils/midiExport';
-import { playProgression } from '../utils/audioEngine';
+import { playProgression, playBassline } from '../utils/audioEngine';
+import { generateProgressionBassline } from '../utils/basslineGenerator';
 
 interface ProgressionRowProps {
   progression: ChordProgression;
@@ -46,7 +47,7 @@ export function ProgressionRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const stopRef = useRef<(() => void) | null>(null);
+  const stopRef = useRef<{ chord?: () => void; bass?: () => void }>({});
   const [midiFilePath, setMidiFilePath] = useState<string | null>(null);
   const [basslinePattern, setBasslinePattern] = useState<BasslinePattern>('none');
   const [chordsMuted, setChordsMuted] = useState(false);
@@ -62,29 +63,55 @@ export function ProgressionRow({
   }, [progression, tempo]);
 
   const handlePlayAll = useCallback(() => {
-    if (isPlaying && stopRef.current) {
-      stopRef.current();
+    if (isPlaying) {
+      // 停止
+      stopRef.current.chord?.();
+      stopRef.current.bass?.();
       setIsPlaying(false);
       setPlayingIndex(null);
-      stopRef.current = null;
+      stopRef.current = {};
       return;
     }
 
     setIsPlaying(true);
-    const { stop } = playProgression(progression, tempo, soundType, (index) => {
-      setPlayingIndex(index);
-      // Reset after last chord
-      if (index === progression.chords.length - 1) {
-        const lastChordDuration = (progression.chords[index].durationBeats * 60) / tempo;
-        setTimeout(() => {
-          setIsPlaying(false);
-          setPlayingIndex(null);
-          stopRef.current = null;
-        }, lastChordDuration * 1000);
+
+    // コード再生（ミュート時はスキップ）
+    if (!chordsMuted && progression.chords.length > 0) {
+      const { stop } = playProgression(progression, tempo, soundType, (index) => {
+        setPlayingIndex(index);
+        // Reset after last chord
+        if (index === progression.chords.length - 1) {
+          const lastChordDuration = (progression.chords[index].durationBeats * 60) / tempo;
+          setTimeout(() => {
+            setIsPlaying(false);
+            setPlayingIndex(null);
+            stopRef.current = {};
+          }, lastChordDuration * 1000);
+        }
+      });
+      stopRef.current.chord = stop;
+    }
+
+    // ベースライン再生（ミュート時またはパターンがnoneの場合はスキップ）
+    if (!bassMuted && basslinePattern !== 'none' && progression.chords.length > 0) {
+      const bassNotes = generateProgressionBassline(progression.chords, basslinePattern);
+      if (bassNotes.length > 0) {
+        const { stop } = playBassline(bassNotes, tempo);
+        stopRef.current.bass = stop;
       }
-    });
-    stopRef.current = stop;
-  }, [isPlaying, progression, tempo, soundType]);
+    }
+
+    // コードがミュートされている場合は、ベースラインの長さで再生終了を判定
+    if (chordsMuted && !bassMuted && basslinePattern !== 'none') {
+      const totalBeats = progression.chords.reduce((acc, c) => acc + c.durationBeats, 0);
+      const totalDuration = (totalBeats * 60) / tempo;
+      setTimeout(() => {
+        setIsPlaying(false);
+        setPlayingIndex(null);
+        stopRef.current = {};
+      }, totalDuration * 1000);
+    }
+  }, [isPlaying, progression, tempo, soundType, basslinePattern, chordsMuted, bassMuted]);
 
   const handleDownloadAll = () => {
     // ミュート状態に応じてMIDI出力を調整
