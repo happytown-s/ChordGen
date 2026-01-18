@@ -4,6 +4,7 @@ export type ScaleType = 'major' | 'minor';
 // 借用元モード（モーダルインターチェンジ用）
 export type BorrowedFrom = 'parallel-minor' | 'parallel-major' | null;
 export type BasslinePattern = 'none' | 'root-only' | 'root-fifth' | 'walking' | 'syncopated' | 'octave';
+export type ChordPattern = 'sustain' | 'arpeggio-up' | 'arpeggio-down' | 'staccato' | 'strum';
 
 // Key definition
 export interface Key {

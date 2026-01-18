@@ -1,4 +1,5 @@
-import type { Chord, ChordProgression } from '../types';
+import type { Chord, ChordProgression, ChordPattern } from '../types';
+import { generateProgressionChordNotes } from './chordPatternGenerator';
 
 export type SoundType = 'sine' | 'piano' | 'pad';
 
@@ -169,6 +170,38 @@ function playNote(
   }
 }
 
+// Play a single note with velocity
+function playNoteWithVelocity(
+  ctx: AudioContext,
+  midiNote: number,
+  startTime: number,
+  duration: number,
+  soundType: SoundType,
+  destination: AudioNode,
+  velocity: number = 80
+) {
+  const frequency = midiToFrequency(midiNote);
+  // velocityをゲインに変換 (0-127 -> 0-1)
+  const velocityGain = velocity / 127;
+
+  // 一時的なゲインノードでベロシティを適用
+  const velocityNode = ctx.createGain();
+  velocityNode.gain.setValueAtTime(velocityGain, startTime);
+  velocityNode.connect(destination);
+
+  switch (soundType) {
+    case 'sine':
+      createSineOscillator(ctx, frequency, startTime, duration, velocityNode);
+      break;
+    case 'piano':
+      createPianoSound(ctx, frequency, startTime, duration, velocityNode);
+      break;
+    case 'pad':
+      createPadSound(ctx, frequency, startTime, duration, velocityNode);
+      break;
+  }
+}
+
 // Play a chord
 export function playChord(
   chord: Chord,
@@ -232,6 +265,60 @@ export function playProgression(
   });
 
   // Return stop function
+  return {
+    stop: () => {
+      timeouts.forEach(clearTimeout);
+      masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+    },
+  };
+}
+
+// Play a chord progression with pattern
+export function playProgressionWithPattern(
+  progression: ChordProgression,
+  tempo: number,
+  soundType: SoundType = 'piano',
+  chordPattern: ChordPattern = 'sustain',
+  onChordPlay?: (index: number) => void
+): { stop: () => void } {
+  // サステインパターンの場合は既存のロジックを使用
+  if (chordPattern === 'sustain') {
+    return playProgression(progression, tempo, soundType, onChordPlay);
+  }
+
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') {
+    ctx.resume();
+  }
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(0.5, ctx.currentTime);
+  masterGain.connect(ctx.destination);
+
+  const baseTime = ctx.currentTime;
+  const timeouts: number[] = [];
+
+  // パターンに基づいたノートを生成
+  const chordNotes = generateProgressionChordNotes(progression.chords, chordPattern);
+
+  // コードごとのコールバック用（最初のノートでトリガー）
+  let currentChordBeat = 0;
+  progression.chords.forEach((chord, index) => {
+    const delay = (currentChordBeat * 60 / tempo) * 1000;
+    if (onChordPlay) {
+      const timeout = window.setTimeout(() => onChordPlay(index), delay);
+      timeouts.push(timeout);
+    }
+    currentChordBeat += chord.durationBeats;
+  });
+
+  // 各ノートを再生
+  chordNotes.forEach((note) => {
+    const startTime = baseTime + (note.startBeat * 60) / tempo;
+    const duration = (note.durationBeats * 60) / tempo;
+    playNoteWithVelocity(ctx, note.midiNote, startTime, duration, soundType, masterGain, note.velocity);
+  });
+
   return {
     stop: () => {
       timeouts.forEach(clearTimeout);

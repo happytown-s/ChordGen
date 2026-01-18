@@ -1,10 +1,10 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import type { ChordProgression, Key, SoundType, NoteName, ChordQuality, BasslinePattern } from '../types';
+import type { ChordProgression, Key, SoundType, NoteName, ChordQuality, BasslinePattern, ChordPattern } from '../types';
 import { ChordBlock } from './ChordBlock';
 import { InsertButton } from './InsertButton';
 import { FullPianoRoll } from './FullPianoRoll';
 import { exportProgressionToMidi, getProgressionFilename, downloadMidi, isElectron, createMidiFileForDrag } from '../utils/midiExport';
-import { playProgression, playBassline } from '../utils/audioEngine';
+import { playProgressionWithPattern, playBassline } from '../utils/audioEngine';
 import { generateProgressionBassline } from '../utils/basslineGenerator';
 
 interface ProgressionRowProps {
@@ -50,6 +50,7 @@ export function ProgressionRow({
   const stopRef = useRef<{ chord?: () => void; bass?: () => void }>({});
   const [midiFilePath, setMidiFilePath] = useState<string | null>(null);
   const [basslinePattern, setBasslinePattern] = useState<BasslinePattern>('none');
+  const [chordPattern, setChordPattern] = useState<ChordPattern>('sustain');
   const [chordsMuted, setChordsMuted] = useState(false);
   const [bassMuted, setBassMuted] = useState(false);
 
@@ -77,7 +78,7 @@ export function ProgressionRow({
 
     // コード再生（ミュート時はスキップ）
     if (!chordsMuted && progression.chords.length > 0) {
-      const { stop } = playProgression(progression, tempo, soundType, (index) => {
+      const { stop } = playProgressionWithPattern(progression, tempo, soundType, chordPattern, (index) => {
         setPlayingIndex(index);
         // Reset after last chord
         if (index === progression.chords.length - 1) {
@@ -111,15 +112,17 @@ export function ProgressionRow({
         stopRef.current = {};
       }, totalDuration * 1000);
     }
-  }, [isPlaying, progression, tempo, soundType, basslinePattern, chordsMuted, bassMuted]);
+  }, [isPlaying, progression, tempo, soundType, basslinePattern, chordPattern, chordsMuted, bassMuted]);
 
   const handleDownloadAll = () => {
     // ミュート状態に応じてMIDI出力を調整
     const effectiveBassPattern = bassMuted ? 'none' : basslinePattern;
+    const effectiveChordPattern = chordsMuted ? 'sustain' : chordPattern; // ミュート時はデフォルト
     const midiBlob = exportProgressionToMidi(
       chordsMuted ? { ...progression, chords: [] } : progression,
       tempo,
-      effectiveBassPattern as BasslinePattern
+      effectiveBassPattern as BasslinePattern,
+      effectiveChordPattern
     );
     const filename = getProgressionFilename(progression);
     downloadMidi(midiBlob, filename);
@@ -219,6 +222,20 @@ export function ProgressionRow({
             <option value="walking">Bass: ウォーキング</option>
             <option value="syncopated">Bass: シンコペ</option>
             <option value="octave">Bass: オクターブ</option>
+          </select>
+
+          {/* Chord Pattern Selector */}
+          <select
+            value={chordPattern}
+            onChange={(e) => setChordPattern(e.target.value as ChordPattern)}
+            className="px-2 py-1 rounded text-sm bg-slate-700 text-slate-200 border border-slate-600 hover:border-purple-500 transition-colors"
+            title="コードパターン"
+          >
+            <option value="sustain">Chord: サステイン</option>
+            <option value="arpeggio-up">Chord: アルペジオ↑</option>
+            <option value="arpeggio-down">Chord: アルペジオ↓</option>
+            <option value="staccato">Chord: スタッカート</option>
+            <option value="strum">Chord: ストラム</option>
           </select>
 
           {/* Regenerate Button */}
